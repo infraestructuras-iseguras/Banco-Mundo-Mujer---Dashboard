@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BANCO · Sistema de Mantenimientos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+/* ============ RESET ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b}
+button{font-family:'Inter',sans-serif;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:'Inter',sans-serif;outline:none}
+a{text-decoration:none}
+
+/* ============ PAGES ============ */
+.page{display:none;width:100%;min-height:100vh}
+.page.active{display:flex}
+
+/* ============ LOGIN PAGE ============ */
+#page-login{
+  background:#0a1628;
+  align-items:center;justify-content:center;
+  padding:20px;position:relative;overflow:hidden;
+}
+#page-login::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 700px 500px at 25% 60%,rgba(30,107,242,.13),transparent),
+             radial-gradient(ellipse 500px 700px at 75% 20%,rgba(30,107,242,.08),transparent);
+  pointer-events:none;
+}
+.grid-bg{position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:50px 50px;
+}
+.login-card{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;padding:40px;width:100%;max-width:440px;
+  backdrop-filter:blur(20px);position:relative;z-index:1;
+  box-shadow:0 25px 60px rgba(0,0,0,.5);
+}
+.login-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
+.login-logo-icon{width:50px;height:50px;background:#1e6bf2;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.login-logo-text{font-size:28px;font-weight:800;color:#fff;letter-spacing:1px}
+.login-sub{text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-bottom:32px}
+.login-section-lbl{text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px}
+
+/* User pills */
+.user-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px}
+.upill{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 13px 7px 7px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+  cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:rgba(255,255,255,.6);
+}
+.upill:hover{background:rgba(30,107,242,.15);border-color:rgba(30,107,242,.4);color:#fff}
+.upill.active{background:rgba(30,107,242,.2);border-color:rgba(30,107,242,.6);color:#fff}
+.upill-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff}
+
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:rgba(255,255,255,.15);font-size:11px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+
+.login-field{margin-bottom:14px}
+.login-label{display:block;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px}
+.login-input{
+  width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:14px 16px;font-size:14px;font-weight:500;color:#fff;
+  transition:border-color .2s;
+}
+.login-input:focus{border-color:#1e6bf2;background:rgba(255,255,255,.1)}
+.login-input::placeholder{color:rgba(255,255,255,.2);font-weight:400}
+
+.login-err{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:14px;display:none}
+.login-err.show{display:block}
+
+.btn-login{
+  width:100%;padding:15px;background:#1e6bf2;border-radius:12px;
+  color:#fff;font-size:15px;font-weight:700;transition:opacity .15s;margin-bottom:16px;
+}
+.btn-login:hover{opacity:.9}
+.btn-login:active{opacity:.8}
+.login-hint{text-align:center;font-size:11px;color:rgba(255,255,255,.2);line-height:1.7}
+.login-hint b{color:rgba(255,255,255,.4)}
+
+/* Register form toggle */
+.reg-toggle{
+  width:100%;padding:11px;background:transparent;
+  border:1.5px solid rgba(255,255,255,.15);border-radius:12px;
+  color:rgba(255,255,255,.5);font-size:13px;font-weight:600;
+  margin-bottom:10px;transition:all .2s;
+}
+.reg-toggle:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8)}
+.reg-form{display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;margin-bottom:14px}
+.reg-form.show{display:block}
+.reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+
+/* ============ REGISTER ROLES ============ */
+.role-select{
+  width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;
+  -webkit-appearance:none;
+}
+.role-select option{background:#0f1e36;color:#fff}
+
+/* ============ DASHBOARD LAYOUT ============ */
+#page-dashboard{flex-direction:row}
+
+/* SIDEBAR */
+.sidebar{
+  width:240px;min-width:240px;background:#0f1e36;
+  display:flex;flex-direction:column;height:100vh;
+  position:sticky;top:0;overflow-y:auto;
+}
+.sidebar-logo{padding:20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo-icon{width:36px;height:36px;background:#1e6bf2;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sidebar-logo-text{font-size:18px;font-weight:800;color:#fff;letter-spacing:.5px}
+.sidebar-nav{padding:12px;flex:1}
+.sidebar-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:10px 8px 6px}
+
+/* NAV BUTTON — pure CSS, no dynamic Tailwind */
+.nav-btn{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:10px 12px;border-radius:10px;
+  font-size:13px;font-weight:500;color:rgba(255,255,255,.6);
+  background:transparent;text-align:left;
+  transition:background .15s,color .15s;
+  margin-bottom:2px;
+}
+.nav-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-btn.active{background:#1e6bf2;color:#fff;font-weight:600}
+.nav-btn svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+.nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;display:none}
+.nav-badge.show{display:inline-block}
+
+.sidebar-sp{margin:12px;padding:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px}
+.sp-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sp-hdr svg{width:16px;height:16px;fill:#1e6bf2}
+.sp-ttl{font-size:12px;font-weight:600;color:rgba(255,255,255,.8)}
+.sp-sub{font-size:10px;color:rgba(255,255,255,.35)}
+.sp-bar-bg{background:rgba(255,255,255,.1);border-radius:4px;height:5px;margin-bottom:4px}
+.sp-bar{height:5px;border-radius:4px;background:#1e6bf2;width:75%}
+.sp-pct{font-size:10px;color:rgba(255,255,255,.35)}
+.btn-sp-open{
+  width:100%;margin-top:10px;padding:8px;background:#1e6bf2;
+  border-radius:8px;color:#fff;font-size:11px;font-weight:600;
+  transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-sp-open:hover{opacity:.88}
+
+/* MAIN */
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{
+  height:60px;background:#fff;border-bottom:1px solid #e2e8f0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;flex-shrink:0;position:sticky;top:0;z-index:50;
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.page-title{font-size:18px;font-weight:700;color:#0f172a}
+.live-pill{
+  display:flex;align-items:center;gap:5px;background:#f0fdf4;
+  border:1px solid #bbf7d0;color:#16a34a;border-radius:20px;
+  padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.5px;
+}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#16a34a;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+.sync-pill{display:flex;align-items:center;gap:5px;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;border:1px solid;transition:all .3s}
+.sync-ok{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+.sync-new{background:#eff6ff;border-color:#bfdbfe;color:#1e6bf2}
+
+.topbar-right{display:flex;align-items:center;gap:12px}
+.btn-link{
+  display:flex;align-items:center;gap:6px;padding:7px 12px;
+  border:1.5px solid #1e6bf2;color:#1e6bf2;border-radius:9px;
+  font-size:12px;font-weight:600;background:#fff;transition:background .15s;
+}
+.btn-link:hover{background:#eff6ff}
+.btn-link svg{width:12px;height:12px;fill:currentColor}
+.notif-wrap{position:relative}
+.notif-btn{width:36px;height:36px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.notif-btn:hover{background:#f1f5f9}
+.notif-btn svg{width:18px;height:18px;fill:#64748b}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:24px;cursor:pointer;transition:background .15s}
+.user-chip:hover{background:#f1f5f9}
+.user-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;background:#1e6bf2}
+.user-nm{font-size:12px;font-weight:600;color:#374151}
+.user-rl{font-size:10px;color:#94a3b8}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-sm{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .2s,transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.kpi-card:hover{border-color:#93c5fd;transform:translateY(-1px)}
+.kpi-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.kpi-lbl{font-size:11px;color:#64748b;font-weight:500}
+.kpi-val{font-size:26px;font-weight:800;color:#0f172a;line-height:1.1}
+.kpi-sub{font-size:10px;color:#94a3b8;margin-top:2px}
+
+/* 2-col grid */
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-bottom:22px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:22px}
+
+/* Map */
+#map{height:320px;border-radius:12px;overflow:hidden;background:#e8edf5;min-height:320px}
+#map-rutas{height:440px;border-radius:12px;overflow:hidden;background:#e8edf5;min-height:440px}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;text-align:left;border-bottom:1px solid #f1f5f9}
+.tbl td{padding:11px 14px;border-bottom:1px solid #f8fafc;color:#374151}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#f8fafc}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid}
+.b-blue{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.b-amber{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.b-green{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.b-red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.b-gray{background:#f8fafc;color:#64748b;border-color:#e2e8f0}
+
+/* Tech avatar */
+.tav{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;color:#fff}
+
+/* Section header */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-ttl{font-size:17px;font-weight:700;color:#0f172a}
+.sec-sub{font-size:12px;color:#94a3b8;margin-top:2px}
+.btn-primary{background:#1e6bf2;color:#fff;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;transition:opacity .15s}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{background:#fff;color:#374151;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;transition:background .15s}
+.btn-secondary:hover{background:#f8fafc}
+.btn-danger{background:#fef2f2;color:#dc2626;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid #fecaca;transition:background .15s}
+.btn-danger:hover{background:#fee2e2}
+
+/* Tech cards grid */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.tech-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:box-shadow .2s,border-color .2s}
+.tech-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);border-color:#93c5fd}
+
+/* Coord banner */
+.coord-banner{background:#0f1e36;color:#e2e8f0;font-family:monospace;font-size:11px;padding:10px 14px;border-radius:10px;margin-bottom:6px}
+.coord-banner.ok{background:#f0fdf4;color:#166534;font-weight:600}
+
+/* Activity feed */
+.act-feed{position:relative;border-left:2px solid #f1f5f9;padding-left:16px;margin-left:8px;space-y:14px}
+.act-item{position:relative;margin-bottom:14px}
+.act-dot{position:absolute;left:-21px;top:2px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1px solid}
+.act-ttl{font-size:12px;font-weight:600;color:#374151}
+.act-sub{font-size:10px;color:#94a3b8;margin-top:1px}
+
+/* Recent reports list */
+.rep-list{display:flex;flex-direction:column;gap:8px}
+.rep-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px}
+
+/* SP folders */
+.sp-folders{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.sp-folder{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;cursor:pointer;transition:border-color .2s,background .15s;text-align:left}
+.sp-folder:hover{border-color:#93c5fd;background:#f8fbff}
+.sp-folder-ico{font-size:22px;margin-bottom:8px}
+.sp-folder-nm{font-size:12px;font-weight:600;color:#374151}
+.sp-folder-cnt{font-size:10px;color:#94a3b8;margin-top:2px}
+
+.drop-zone{border:2px dashed #cbd5e1;border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#1e6bf2;background:#f0f7ff}
+.drop-zone-ico{font-size:36px;margin-bottom:8px}
+.drop-zone-ttl{font-size:14px;font-weight:600;color:#475569;margin-bottom:4px}
+.drop-zone-sub{font-size:11px;color:#94a3b8}
+
+.sp-file-list{display:flex;flex-direction:column;gap:8px}
+.sp-file-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px}
+.sp-file-ico{font-size:18px;flex-shrink:0}
+.sp-file-nm{flex:1;font-size:12px;font-weight:600;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-file-meta{font-size:10px;color:#94a3b8}
+.sp-file-link{font-size:10px;color:#1e6bf2;cursor:pointer;white-space:nowrap}
+.sp-file-link:hover{text-decoration:underline}
+
+/* Progress */
+.prog-wrap{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:14px;display:none}
+.prog-wrap.show{display:block}
+.prog-lbl{font-size:12px;font-weight:600;color:#374151;margin-bottom:8px}
+.prog-bg{background:#e2e8f0;border-radius:4px;height:6px}
+.prog-bar{height:6px;border-radius:4px;background:#1e6bf2;transition:width .3s}
+
+/* Mantenimiento */
+.mant-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.mant-stat{text-align:center;padding:24px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px}
+.mant-stat-val{font-size:44px;font-weight:900;color:#1e6bf2;line-height:1}
+.mant-stat-lbl{font-size:13px;font-weight:700;color:#374151;margin-top:6px}
+.mant-stat-sub{font-size:11px;color:#64748b;margin-top:2px}
+
+/* Informes */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-row-card{text-align:center;padding:16px;border-radius:14px;border:1px solid}
+
+/* Facturación */
+.fac-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.fac-stat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px}
+.fac-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.fac-val{font-size:18px;font-weight:800;color:#0f172a}
+.fac-sub{font-size:10px;margin-top:2px}
+
+/* Cost bars */
+.cost-bar-row{margin-bottom:10px}
+.cost-bar-hdr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.cost-bar-lbl{color:#374151;font-weight:500}
+.cost-bar-val{font-weight:700;color:#0f172a}
+.cost-bg{background:#f1f5f9;border-radius:4px;height:7px}
+.cost-fill{height:7px;border-radius:4px}
+
+/* Org chart */
+.org-coords{display:flex;justify-content:center;gap:20px;margin-bottom:28px}
+.org-coord{background:#fff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;background:#eff6ff}
+.org-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.org-node{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;align-items:start;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+
+/* Config */
+.cfg-block{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px}
+.cfg-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
+pre#storage-pre{font-size:10px;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto;max-height:160px;display:none}
+
+/* Modals */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-ttl{font-size:17px;font-weight:700;color:#0f172a}
+.modal-close{width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748b;transition:background .15s}
+.modal-close:hover{background:#e2e8f0}
+
+.link-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;font-family:monospace;font-size:12px;color:#1e6bf2;word-break:break-all}
+.btn-copy{background:#1e6bf2;color:#fff;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.btn-wa{width:100%;padding:12px;background:#22c55e;border-radius:12px;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;transition:opacity .15s}
+.btn-wa:hover{opacity:.88}
+.reported-list{display:flex;flex-direction:column;gap:7px;max-height:180px;overflow-y:auto}
+.rep-row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #f1f5f9;border-radius:9px;padding:8px 12px}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:#0f1e36;color:#fff;padding:12px 20px;border-radius:12px;
+  font-size:13px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,.3);
+  opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;
+  pointer-events:none;max-width:320px;
+}
+#toast.show{opacity:1;transform:none}
+
+/* Spin */
+.spin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Footer */
+.footer{height:38px;background:#fff;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:11px;color:#94a3b8;flex-shrink:0}
+
+/* Leaflet */
+.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:0 4px 20px rgba(0,0,0,.15)!important}
+.leaflet-popup-tip{display:none}
+
+/* Responsive */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.fac-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{display:none}.kpi-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN PAGE ===================== -->
+<div class="page active" id="page-login">
+  <div class="grid-bg"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏦</div>
+      <span class="login-logo-text">BANCO</span>
+    </div>
+    <div class="login-sub">Sistema de Gestión de Mantenimientos · iseguras.com.co</div>
+
+    <div class="login-section-lbl">Acceso rápido</div>
+    <div class="user-pills" id="quick-pills"></div>
+
+    <div class="divider">o ingresa manualmente</div>
+
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input class="login-input" id="l-user" type="text" placeholder="Nombre o usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input class="login-input" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="l-err">Usuario o contraseña incorrectos.</div>
+    <button class="btn-login" onclick="doLogin()" id="l-btn">Ingresar al sistema</button>
+
+    <!-- REGISTER TOGGLE -->
+    <button class="reg-toggle" onclick="toggleReg()">➕ Registrar nuevo usuario</button>
+    <div class="reg-form" id="reg-form">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:12px">Nuevo usuario del sistema</div>
+      <div class="reg-grid">
+        <input class="login-input" id="r-nombre" placeholder="Nombre completo" type="text">
+        <input class="login-input" id="r-user" placeholder="Usuario (sin espacios)" type="text">
+      </div>
+      <div class="reg-grid">
+        <input class="login-input" id="r-pass" placeholder="Contraseña" type="password">
+        <input class="login-input" id="r-pass2" placeholder="Confirmar contraseña" type="password">
+      </div>
+      <div style="margin-bottom:10px">
+        <select class="role-select" id="r-rol">
+          <option value="Coordinador del Proyecto">Coordinador del Proyecto</option>
+          <option value="Coordinador SGSST">Coordinador SGSST</option>
+          <option value="Supervisor General">Supervisor General</option>
+          <option value="Técnico de campo">Técnico de campo</option>
+          <option value="Administrativo">Administrativo</option>
+        </select>
+      </div>
+      <div class="login-err" id="r-err" style="display:none"></div>
+      <button class="btn-login" style="margin-bottom:0" onclick="registerUser()">Crear usuario</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD PAGE ===================== -->
+<div class="page" id="page-dashboard">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏦</div>
+      <span class="sidebar-logo-text">BANCO</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Principal</div>
+      <button class="nav-btn active" id="nb-dashboard" onclick="showSection('dashboard')">
+        <svg viewBox="0 0 512 512"><path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm64 64V416H224V160H64zm384 0H288V416H448V160z"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" id="nb-tecnicos" onclick="showSection('tecnicos')">
+        <svg viewBox="0 0 640 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>
+        Técnicos
+        <span class="nav-badge" id="nav-badge-tec">0</span>
+      </button>
+      <button class="nav-btn" id="nb-ordenes" onclick="showSection('ordenes')">
+        <svg viewBox="0 0 384 512"><path d="M192 0c-41.8 0-77.4 26.7-90.5 64H64C28.7 64 0 92.7 0 128V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H282.5C269.4 26.7 233.8 0 192 0zm0 64a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM128 320H256c8.8 0 16 7.2 16 16s-7.2 16-16 16H128c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0-64H256c8.8 0 16 7.2 16 16s-7.2 16-16 16H128c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/></svg>
+        Órdenes
+      </button>
+      <button class="nav-btn" id="nb-rutas" onclick="showSection('rutas')">
+        <svg viewBox="0 0 512 512"><path d="M227.7 11.7c15.6-15.6 40.9-15.6 56.6 0l216 216c15.6 15.6 15.6 40.9 0 56.6l-216 216c-15.6 15.6-40.9 15.6-56.6 0l-216-216c-15.6-15.6-15.6-40.9 0-56.6l216-216zm87.6 137c-4.6-4.6-11.5-5.9-17.4-3.5s-9.9 8.3-9.9 14.8v56H168c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24h120v56c0 6.5 3.9 12.3 9.9 14.8s12.9 1.1 17.4-3.5l80-80c6.2-6.2 6.2-16.4 0-22.6l-80-80z"/></svg>
+        Rutas
+      </button>
+      <button class="nav-btn" id="nb-preventivo" onclick="showSection('preventivo')">
+        <svg viewBox="0 0 512 512"><path d="M78.6 5C69.1-2.4 55.6-1.5 47 7L7 47c-8.5 8.5-9.4 22-2.1 31.6l80 104c4.5 5.9 11.6 9.4 19 9.4h54.1l109 109c-14.7 29-10 65.4 14.3 89.6l112 112c12.5 12.5 32.8 12.5 45.3 0l64-64c12.5-12.5 12.5-32.8 0-45.3l-112-112c-24.2-24.2-60.6-29-89.6-14.3l-109-109V104c0-7.5-3.5-14.5-9.4-19L78.6 5z"/></svg>
+        Preventivo
+      </button>
+      <button class="nav-btn" id="nb-correctivo" onclick="showSection('correctivo')">
+        <svg viewBox="0 0 512 512"><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg>
+        Correctivo
+      </button>
+      <button class="nav-btn" id="nb-informes" onclick="showSection('informes')">
+        <svg viewBox="0 0 384 512"><path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128h128L256 0z"/></svg>
+        Informes
+      </button>
+      <button class="nav-btn" id="nb-facturacion" onclick="showSection('facturacion')">
+        <svg viewBox="0 0 512 512"><path d="M512 80c0 18-14.3 34.6-38.4 48c-29.1 16.1-72.5 27.5-122.3 30.9c-3.7-1.8-7.4-3.5-11.3-5C300.6 137.4 248.2 128 192 128c-8.3 0-16.4 .2-24.5 .6l-1.1-.6C142.3 114.6 128 98 128 80c0-44.2 86-80 192-80S512 35.8 512 80z"/></svg>
+        Facturación
+      </button>
+      <button class="nav-btn" id="nb-documentos" onclick="showSection('documentos')">
+        <svg viewBox="0 0 576 512"><path d="M384 480h48c11.4 0 21.9-6 27.6-15.9l112-192c5.8-9.9 5.8-22.1.1-32.1S555.5 224 544 224H144c-11.4 0-21.9 6-27.6 15.9L48 357.1V96c0-8.8 7.2-16 16-16H181.5c4.2 0 8.3 1.7 11.3 4.7l26.5 26.5c21 21 49.5 32.8 79.2 32.8H416c8.8 0 16 7.2 16 16v32h48V160c0-35.3-28.7-64-64-64H298.5c-17 0-33.3-6.7-45.3-18.7L226.7 50.7c-12-12-28.3-18.7-45.3-18.7H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H87.7 384z"/></svg>
+        Documentos
+      </button>
+      <div class="sidebar-section" style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:14px">Más</div>
+      <button class="nav-btn" id="nb-organigrama" onclick="showSection('organigrama')">
+        <svg viewBox="0 0 576 512"><path d="M208 80c0-26.5 21.5-48 48-48h64c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48h-8v40H464c26.5 0 48 21.5 48 48v32h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H448c-26.5 0-48-21.5-48-48V360c0-26.5 21.5-48 48-48h8V280c0-8.8-7.2-16-16-16H320v48h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H256c-26.5 0-48-21.5-48-48V360c0-26.5 21.5-48 48-48h8V264H128c-8.8 0-16 7.2-16 16v32h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V360c0-26.5 21.5-48 48-48h8V280c0-26.5 21.5-48 48-48H312V192h-8c-26.5 0-48-21.5-48-48V80z"/></svg>
+        Organigrama
+      </button>
+      <button class="nav-btn" id="nb-configuracion" onclick="showSection('configuracion')">
+        <svg viewBox="0 0 512 512"><path d="M495.9 166.6c3.2 8.7.5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8C255.3 510.8 241.1 512 226.6 512s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L53.7 425.9c-8.8 2.8-18.6.3-24.5-6.8-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C34.6 273.1 34 264.6 34 256s.6-17.1 1.7-25.4L-6.8 191.2c-6.9-6.2-9.6-15.9-6.4-24.6 4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2 5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C198 1.2 212.2 0 226.7 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8 8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg>
+        Configuración
+      </button>
+    </nav>
+    <!-- SP widget -->
+    <div class="sidebar-sp">
+      <div class="sp-hdr">
+        <svg viewBox="0 0 640 512"><path d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9-.1-2.7-.2-5.4-.2-8.1 0-88.4 71.6-160 160-160 59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96 0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z"/></svg>
+        <div><div class="sp-ttl">SharePoint · Azure</div><div class="sp-sub">Almacenamiento en la nube</div></div>
+      </div>
+      <div class="sp-bar-bg"><div class="sp-bar"></div></div>
+      <div class="sp-pct">75% usado · 15 GB / 20 GB</div>
+      <button class="btn-sp-open" onclick="openSP()">
+        <svg style="width:11px;height:11px;fill:currentColor" viewBox="0 0 512 512"><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"/></svg>
+        Abrir SharePoint
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAP -->
+  <div class="main-wrap">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="live-pill"><div class="live-dot"></div>En vivo</div>
+        <div class="sync-pill sync-ok" id="sync-pill">
+          <div class="live-dot" style="background:currentColor"></div>
+          <span id="sync-txt">Sincronizado</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-link" onclick="openLinkModal()">
+          <svg viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372.1 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.8l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>
+          Link técnico
+        </button>
+        <div class="notif-wrap">
+          <button class="notif-btn">
+            <svg viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v25.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416H424c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm0 96c61.9 0 112 50.1 112 112v25.4c0 47.9 13.9 94.6 39.7 134.6H72.3C98.1 328 112 281.3 112 233.4V208c0-61.9 50.1-112 112-112zm64 352H160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7 33.3-6.7 45.3-18.7S288 465 288 448z"/></svg>
+          </button>
+          <div class="notif-badge" id="notif-n">0</div>
+        </div>
+        <div class="user-chip" onclick="showSection('configuracion')">
+          <div class="user-av" id="u-av">WH</div>
+          <div><div class="user-nm" id="u-nm">William Higuera</div><div class="user-rl" id="u-rl">Coordinador</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="sec-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card" onclick="showSection('tecnicos')"><div class="kpi-icon" style="background:#eff6ff">👷</div><div><div class="kpi-lbl">Técnicos activos</div><div class="kpi-val" id="kv-tec">11</div><div class="kpi-sub">En campo</div></div></div>
+          <div class="kpi-card" onclick="showSection('ordenes')"><div class="kpi-icon" style="background:#fffbeb">📋</div><div><div class="kpi-lbl">Órdenes en proceso</div><div class="kpi-val">8</div><div class="kpi-sub">En ejecución</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon" style="background:#f0fdf4">🏢</div><div><div class="kpi-lbl">Oficinas cubiertas</div><div class="kpi-val">189</div><div class="kpi-sub">22 departamentos</div></div></div>
+          <div class="kpi-card" onclick="showSection('informes')"><div class="kpi-icon" style="background:#faf5ff">📄</div><div><div class="kpi-lbl">Reportes hoy</div><div class="kpi-val" id="kv-rep">0</div><div class="kpi-sub">Enviados</div></div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;font-weight:600;color:#0f172a">Técnicos en campo · Colombia</div>
+              <div style="font-size:10px;color:#94a3b8" id="last-upd">—</div>
+            </div>
+            <div id="map" style="height:320px;border-radius:12px;overflow:hidden;background:#e8f0f5"></div>
+          </div>
+          <div class="card-sm" style="padding:0;overflow:hidden">
+            <div style="padding:16px 16px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:14px;font-weight:600;color:#0f172a">Reportes recientes</div>
+              <button onclick="showSection('tecnicos')" style="font-size:11px;color:#1e6bf2;background:none;border:none;cursor:pointer">Ver todos</button>
+            </div>
+            <div style="padding:12px" id="rep-recent"><p style="text-align:center;font-size:12px;color:#94a3b8;padding:20px 0">Sin reportes aún</p></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card-sm" style="padding:0;overflow:hidden">
+            <div style="padding:14px 16px 10px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:14px;font-weight:600;color:#0f172a">Técnicos registrados</div>
+              <button onclick="showSection('tecnicos')" style="font-size:11px;color:#1e6bf2;background:none;border:none;cursor:pointer">Ver todos</button>
+            </div>
+            <table class="tbl" id="tbl-dash"><thead><tr><th>Técnico</th><th>Estado</th><th>Región</th><th>Hora</th><th>GPS</th><th>Fotos</th></tr></thead><tbody id="tbody-dash"></tbody></table>
+          </div>
+          <div class="card-sm" style="padding:0;overflow:hidden">
+            <div style="padding:14px 16px 10px;border-bottom:1px solid #f1f5f9"><div style="font-size:14px;font-weight:600;color:#0f172a">Actividad reciente</div></div>
+            <div style="padding:14px 16px"><div class="act-feed" id="act-feed"><p style="font-size:12px;color:#94a3b8">Sin actividad</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TÉCNICOS -->
+      <div class="section" id="sec-tecnicos">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Personal Técnico · Mantenimiento Preventivo</div><div class="sec-sub">11 líderes regionales · 22 departamentos · 189 oficinas</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-primary" onclick="openLinkModal()">🔗 Link técnico</button>
+            <button class="btn-danger" onclick="clearReports()">🗑 Limpiar reportes</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:18px;display:flex;align-items:center;gap:16px;background:#eff6ff;border-color:#bfdbfe">
+          <div class="tav" style="width:56px;height:56px;font-size:20px;background:#1e6bf2;border:2.5px solid #93c5fd">WH</div>
+          <div><div style="font-size:10px;font-weight:700;color:#1d4ed8;letter-spacing:1px;text-transform:uppercase">Coordinador del Proyecto</div>
+            <div style="font-size:16px;font-weight:800;color:#0f172a">William Higuera García</div>
+            <div style="font-size:12px;color:#64748b">ingenieria@iseguras.com.co</div></div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:11px;color:#94a3b8">Coordinador SGSST · MA</div>
+            <div style="font-size:13px;font-weight:600;color:#374151">Abel Vargas Alfonso</div>
+            <div style="font-size:11px;color:#94a3b8">seguridad.laboral@iseguras.com.co</div>
+          </div>
+        </div>
+        <div class="tech-grid" id="tech-cards-grid"></div>
+      </div>
+
+      <!-- ÓRDENES -->
+      <div class="section" id="sec-ordenes">
+        <div class="sec-hdr">
+          <div class="sec-ttl">Control de Órdenes de Trabajo</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="descargarExcelOTs()">📥 Excel</button>
+            <button class="btn-primary" onclick="openModal('modal-ot')">+ Nueva OT</button>
+          </div>
+        </div>
+        <!-- KPIs OT -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#0f172a" id="ot-total">0</div>
+            <div style="font-size:11px;color:#64748b;font-weight:500">Total OTs</div>
+          </div>
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#d97706" id="ot-proceso">0</div>
+            <div style="font-size:11px;color:#92400e;font-weight:500">En proceso</div>
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#1e6bf2" id="ot-ruta">0</div>
+            <div style="font-size:11px;color:#1e40af;font-weight:500">En ruta</div>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#16a34a" id="ot-final">0</div>
+            <div style="font-size:11px;color:#166534;font-weight:500">Finalizadas</div>
+          </div>
+        </div>
+        <div class="card-sm" style="padding:0;overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+            <select id="ot-filter" onchange="renderOTs()" style="font-size:11px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:7px;color:#374151">
+              <option value="">Todas</option>
+              <option value="En proceso">En proceso</option>
+              <option value="En ruta">En ruta</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Pendiente">Pendiente</option>
+            </select>
+            <button onclick="if(confirm('¿Borrar TODAS las OTs?')){saveOTs([]);renderOTs();toast('🗑 OTs eliminadas')}" style="font-size:11px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:4px 10px;cursor:pointer">🗑 Borrar todas</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>OT</th><th>Descripción</th><th>Departamento</th><th>Técnico</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="ot-tbody"></tbody>
+            </table>
+          </div>
+          <div id="ot-empty" style="padding:24px;text-align:center;font-size:12px;color:#94a3b8;display:none">No hay órdenes. Crea la primera con "+ Nueva OT"</div>
+        </div>
+      </div>
+
+      <!-- RUTAS -->
+      <div class="section" id="sec-rutas">
+        <div class="sec-hdr"><div class="sec-ttl">Rutas · Mantenimiento Preventivo</div></div>
+        <div class="grid2">
+          <div class="card" style="padding:14px"><div id="map-rutas"></div></div>
+          <div id="ruta-table" style="overflow-y:auto;max-height:480px"></div>
+        </div>
+      </div>
+
+      <!-- PREVENTIVO -->
+      <div class="section" id="sec-preventivo">
+        <div class="sec-hdr">
+          <div>
+            <div class="sec-ttl">Mantenimiento Preventivo</div>
+            <div class="sec-sub">Frecuencia semestral · 11 técnicos certificados CONTE</div>
+          </div>
+          <button class="btn-secondary" onclick="descargarExcelPreventivo()">📥 Descargar Excel</button>
+        </div>
+
+        <div class="mant-stats">
+          <div class="mant-stat"><div class="mant-stat-val">11</div><div class="mant-stat-lbl">Líderes regionales</div><div class="mant-stat-sub">Certificados CONTE</div></div>
+          <div class="mant-stat"><div class="mant-stat-val">22</div><div class="mant-stat-lbl">Departamentos</div><div class="mant-stat-sub">Cobertura nacional</div></div>
+          <div class="mant-stat"><div class="mant-stat-val">189</div><div class="mant-stat-lbl">Oficinas</div><div class="mant-stat-sub">Total contrato</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <div class="card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:14px">✅ Sistemas que abarca</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#374151">
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>🔧</span> Sistema de lubricación</div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>❄️</span> Sistema de enfriamiento</div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>⛽</span> Sistema de combustible</div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>⚡</span> Sistema eléctrico (AC/DC)</div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>🔬</span> Pruebas de funcionamiento</div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f0fdf4;border-radius:8px"><span>📋</span> Cierre operativo</div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:14px">📊 Estado de avance</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:#374151;font-weight:500">Oficinas atendidas</span><span style="font-weight:700">178 / 189</span></div>
+                <div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:#16a34a;height:8px;border-radius:4px;width:94%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:#374151;font-weight:500">Cumplimiento ANS</span><span style="font-weight:700;color:#16a34a">94%</span></div>
+                <div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:#16a34a;height:8px;border-radius:4px;width:94%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:#374151;font-weight:500">Pendientes</span><span style="font-weight:700;color:#d97706">11 oficinas</span></div>
+                <div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:#d97706;height:8px;border-radius:4px;width:6%"></div></div>
+              </div>
+            </div>
+            <div style="margin-top:14px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:12px;color:#1e40af">
+              <strong>Frecuencia:</strong> Semestral (2 veces al año)<br>
+              <strong>Supervisión:</strong> William Higuera García<br>
+              <strong>Coordinación SGSST:</strong> Abel Vargas Alfonso
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla preventivo por técnico -->
+        <div class="card-sm" style="padding:0;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600">Distribución por técnico · Ruta Preventiva</div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>Técnico</th><th>Departamentos</th><th>N° Oficinas</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#0e7490">EV</div>Eduardo Velaides</div></td><td>Cesar, Atlántico</td><td><span class="badge b-blue">18</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#7c3aed">GZ</div>Gustavo Zapata</div></td><td>Bolívar, Córdoba, Sucre</td><td><span class="badge b-blue">15</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#b45309">JQ</div>Jaime Quintanilla</div></td><td>Santander</td><td><span class="badge b-blue">6</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#16a34a">OR</div>Omar Rojas</div></td><td>Boyacá, Casanare, Meta</td><td><span class="badge b-blue">16</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#d97706">JR</div>Jairo Ruales</div></td><td>Cauca, Valle Del Cauca</td><td><span class="badge b-blue">37</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#dc2626">LB</div>Luis Bernal</div></td><td>Nariño</td><td><span class="badge b-blue">21</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#0284c7">MP</div>Maury Peñaranda</div></td><td>Putumayo, Huila, Caquetá</td><td><span class="badge b-blue">18</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#15803d">FG</div>Fredy Guzman</div></td><td>Tolima, Meta</td><td><span class="badge b-blue">20</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#1e6bf2">DR</div>Diego Rozo</div></td><td>Cundinamarca</td><td><span class="badge b-blue">28</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#9333ea">CF</div>Cesar Florez</div></td><td>Quindío, Risaralda, Caldas</td><td><span class="badge b-blue">13</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="tav" style="width:26px;height:26px;font-size:10px;background:#0891b2">JS</div>Juan Santamaria</div></td><td>Magdalena, Guajira</td><td><span class="badge b-blue">6</span></td><td><span class="badge b-green">Activo</span></td></tr>
+                <tr style="background:#f8fafc;font-weight:700"><td colspan="2" style="padding:10px 14px">Total</td><td style="padding:10px 14px"><span class="badge b-blue" style="font-size:13px">189</span></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORRECTIVO -->
+      <div class="section" id="sec-correctivo">
+        <div class="sec-hdr">
+          <div>
+            <div class="sec-ttl">Mantenimiento Correctivo</div>
+            <div class="sec-sub">Supervisión: Abel Vargas Alfonso · SGSST · MA</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="descargarExcelCorrectivo()">📥 Descargar Excel</button>
+            <button class="btn-primary" onclick="openModal('modal-correctivo')">+ Registrar correctivo</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px">
+          <div style="text-align:center;padding:16px;background:#fef3c7;border:1px solid #fde68a;border-radius:14px">
+            <div style="font-size:32px;font-weight:900;color:#b45309" id="corr-total">0</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-top:4px">Correctivos</div>
+            <div style="font-size:10px;color:#92400e">Registrados</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:14px">
+            <div style="font-size:32px;font-weight:900;color:#dc2626" id="corr-abiertos">0</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-top:4px">Abiertos</div>
+            <div style="font-size:10px;color:#991b1b">En proceso</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px">
+            <div style="font-size:32px;font-weight:900;color:#16a34a" id="corr-cerrados">0</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-top:4px">Cerrados</div>
+            <div style="font-size:10px;color:#166534">Resueltos</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px">
+            <div style="font-size:32px;font-weight:900;color:#1e6bf2" id="corr-depts">22</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-top:4px">Departamentos</div>
+            <div style="font-size:10px;color:#1e40af">Cobertura</div>
+          </div>
+        </div>
+
+        <!-- Tabla correctivos registrados -->
+        <div class="card-sm" style="padding:0;overflow:hidden;margin-bottom:18px">
+          <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:14px;font-weight:600">Correctivos registrados</div>
+            <select id="corr-filter" onchange="renderCorrectivos()" style="font-size:11px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:7px;color:#374151">
+              <option value="">Todos</option>
+              <option value="Abierto">Abiertos</option>
+              <option value="En proceso">En proceso</option>
+              <option value="Cerrado">Cerrados</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="tbl">
+              <thead><tr><th>N°</th><th>Descripción</th><th>Técnico</th><th>Departamento</th><th>Oficina</th><th>Fecha</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="corr-tbody"></tbody>
+            </table>
+          </div>
+          <div id="corr-empty" style="padding:24px;text-align:center;font-size:12px;color:#94a3b8">No hay correctivos registrados. Usa "+ Registrar correctivo"</div>
+        </div>
+
+        <!-- Ruta correctiva por departamento -->
+        <div class="card-sm" style="padding:0;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid #fde68a;background:#fffbeb;font-size:14px;font-weight:600;color:#b45309">📍 Ruta Correctiva · Técnico por departamento</div>
+          <div style="overflow-x:auto">
+            <table class="tbl" style="font-size:12px">
+              <thead><tr><th>Departamento</th><th>Técnico</th><th>Supervisión</th></tr></thead>
+              <tbody>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Atlántico</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0e7490">EV</div>Eduardo Velaides</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Bolívar</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#7c3aed">GZ</div>Gustavo Zapata</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Boyacá</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#16a34a">OR</div>Omar Rojas</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Caldas</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#9333ea">CF</div>Cesar Florez</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Caquetá</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0284c7">MP</div>Maury Peñaranda</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Casanare</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#16a34a">OR</div>Omar Rojas</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Cauca</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#d97706">JR</div>Jairo Ruales</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Cesar</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0e7490">EV</div>Eduardo Velaides</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Córdoba</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#7c3aed">GZ</div>Gustavo Zapata</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Cundinamarca</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#1e6bf2">DR</div>Diego Rozo</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Guajira</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0891b2">JS</div>Juan Santamaria</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Huila</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0284c7">MP</div>Maury Peñaranda</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Magdalena</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0891b2">JS</div>Juan Santamaria</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Meta</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#16a34a">OR</div>Omar Rojas</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Nariño</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#dc2626">LB</div>Luis Bernal</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Putumayo</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#0284c7">MP</div>Maury Peñaranda</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Quindío</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#9333ea">CF</div>Cesar Florez</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Risaralda</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#9333ea">CF</div>Cesar Florez</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Santander</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#b45309">JQ</div>Jaime Quintanilla</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Sucre</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#7c3aed">GZ</div>Gustavo Zapata</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="">
+                  <td style="font-weight:600;padding:9px 16px">Tolima</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#15803d">FG</div>Fredy Guzman</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+                <tr style="background:#fffdf5">
+                  <td style="font-weight:600;padding:9px 16px">Valle Del Cauca</td>
+                  <td style="padding:9px 16px"><div style="display:flex;align-items:center;gap:7px"><div class="tav" style="width:22px;height:22px;font-size:8px;background:#d97706">JR</div>Jairo Ruales</div></td>
+                  <td style="color:#64748b;font-size:11px;padding:9px 16px">Abel Vargas Alfonso · SGSST</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFORMES -->
+      <div class="section" id="sec-informes">
+        <div class="sec-hdr"><div class="sec-ttl">Informes de Cumplimiento ANS</div></div>
+        <div class="kpi-row">
+          <div class="kpi-row-card" style="background:#f0fdf4;border-color:#bbf7d0"><div style="font-size:32px;font-weight:900;color:#166534">94%</div><div style="font-size:12px;font-weight:600;color:#374151">Cumplimiento ANS</div></div>
+          <div class="kpi-row-card" style="background:#eff6ff;border-color:#bfdbfe"><div style="font-size:32px;font-weight:900;color:#1d4ed8">178</div><div style="font-size:12px;font-weight:600;color:#374151">Oficinas atendidas</div></div>
+          <div class="kpi-row-card" style="background:#fffbeb;border-color:#fde68a"><div style="font-size:32px;font-weight:900;color:#b45309">11</div><div style="font-size:12px;font-weight:600;color:#374151">Pendientes</div></div>
+          <div class="kpi-row-card" style="background:#faf5ff;border-color:#e9d5ff"><div class="kpi-val" id="kv-inf" style="font-size:32px;font-weight:900;color:#7c3aed">0</div><div style="font-size:12px;font-weight:600;color:#374151">Reportes técnicos</div></div>
+        </div>
+        <div class="card-sm" style="padding:0;overflow:hidden" id="inf-tbl-wrap">
+          <p style="padding:20px;text-align:center;font-size:12px;color:#94a3b8">Sin reportes registrados aún.</p>
+        </div>
+      </div>
+
+      <!-- FACTURACIÓN -->
+      <div class="section" id="sec-facturacion">
+        <div class="sec-hdr">
+          <div class="sec-ttl">Facturación</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="descargarExcelFacturas()" style="display:flex;align-items:center;gap:6px">
+              <svg style="width:14px;height:14px;fill:#16a34a" viewBox="0 0 384 512"><path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128h128L256 0zM155.7 250.2L192 302.1l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4L163 344l-46.3-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z"/></svg>
+              Descargar Excel
+            </button>
+            <button class="btn-primary" onclick="openModal('modal-factura')">+ Nueva factura</button>
+          </div>
+        </div>
+
+        <!-- KPIs dinámicos -->
+        <div class="fac-stats" id="fac-kpis">
+          <div class="fac-stat"><div class="fac-ico" style="background:#f0fdf4">💰</div><div><div style="font-size:11px;color:#64748b">Facturado (mes)</div><div class="fac-val" id="fk-total">$0</div><div class="fac-sub" style="color:#16a34a;font-weight:600">Total pagado</div></div></div>
+          <div class="fac-stat"><div class="fac-ico" style="background:#eff6ff">📑</div><div><div style="font-size:11px;color:#64748b">Facturas emitidas</div><div class="fac-val" id="fk-count">0</div><div class="fac-sub" style="color:#94a3b8">Este mes</div></div></div>
+          <div class="fac-stat"><div class="fac-ico" style="background:#fffbeb">⏳</div><div><div style="font-size:11px;color:#64748b">Pendiente cobro</div><div class="fac-val" id="fk-pend">$0</div><div class="fac-sub" style="color:#d97706;font-weight:600" id="fk-pend-cnt">0 facturas</div></div></div>
+          <div class="fac-stat"><div class="fac-ico" style="background:#faf5ff">📈</div><div><div style="font-size:11px;color:#64748b">Total contrato</div><div class="fac-val">$1.2B</div><div class="fac-sub" style="color:#94a3b8">2 años vigencia</div></div></div>
+        </div>
+
+        <div class="grid2" style="gap:18px">
+          <!-- Tabla facturas dinámica -->
+          <div class="card-sm" style="padding:0;overflow:hidden">
+            <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:14px;font-weight:600">Facturas registradas</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="fac-filter" onchange="renderFacturas()" style="font-size:11px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:7px;color:#374151">
+                  <option value="">Todas</option>
+                  <option value="Pagada">Pagadas</option>
+                  <option value="Pendiente">Pendientes</option>
+                  <option value="Vencida">Vencidas</option>
+                </select>
+                <button onclick="descargarExcelFacturas()" title="Descargar Excel" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
+                  📥 Excel
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="tbl" id="fac-tabla">
+                <thead><tr><th>N°</th><th>Concepto</th><th>Técnico</th><th>Valor</th><th>Fecha</th><th>Dpto.</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="fac-tbody"></tbody>
+              </table>
+            </div>
+            <div id="fac-empty" style="padding:24px;text-align:center;font-size:12px;color:#94a3b8;display:none">No hay facturas aún. Crea la primera con "+ Nueva factura"</div>
+          </div>
+
+          <!-- Costos + resumen -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:14px">Costos operativos</div>
+              <div class="cost-bar-row"><div class="cost-bar-hdr"><span class="cost-bar-lbl">Mano de obra</span><span class="cost-bar-val">$28.4M</span></div><div class="cost-bg"><div class="cost-fill" style="width:59%;background:#1e6bf2"></div></div></div>
+              <div class="cost-bar-row"><div class="cost-bar-hdr"><span class="cost-bar-lbl">Insumos / repuestos</span><span class="cost-bar-val">$11.8M</span></div><div class="cost-bg"><div class="cost-fill" style="width:24%;background:#16a34a"></div></div></div>
+              <div class="cost-bar-row"><div class="cost-bar-hdr"><span class="cost-bar-lbl">Transporte / viáticos</span><span class="cost-bar-val">$5.2M</span></div><div class="cost-bg"><div class="cost-fill" style="width:11%;background:#d97706"></div></div></div>
+              <div class="cost-bar-row"><div class="cost-bar-hdr"><span class="cost-bar-lbl">Administrativo</span><span class="cost-bar-val">$2.8M</span></div><div class="cost-bg"><div class="cost-fill" style="width:6%;background:#9333ea"></div></div></div>
+              <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:4px;display:flex;justify-content:space-between;font-size:13px">
+                <span style="font-weight:700">Total costos</span><span style="font-weight:900">$48.2M</span>
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:12px">Estado de cobro</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;items:center;justify-content:space-between;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">
+                  <div style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#166534">✅ Pagadas</div>
+                  <span style="font-size:12px;font-weight:800;color:#166534" id="fac-res-pag">0 · $0</span>
+                </div>
+                <div style="display:flex;items:center;justify-content:space-between;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px">
+                  <div style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#b45309">⏳ Pendientes</div>
+                  <span style="font-size:12px;font-weight:800;color:#b45309" id="fac-res-pen">0 · $0</span>
+                </div>
+                <div style="display:flex;items:center;justify-content:space-between;padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px">
+                  <div style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#991b1b">🔴 Vencidas</div>
+                  <span style="font-size:12px;font-weight:800;color:#991b1b" id="fac-res-vec">0 · $0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div class="section" id="sec-documentos">
+        <div class="sec-hdr">
+          <div><div class="sec-ttl">Documentos · SharePoint</div><div class="sec-sub">Carpeta Seguimiento Ingeniería · iseguras · Azure</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-primary" onclick="openSP()">☁️ Abrir SharePoint</button>
+            <button class="btn-secondary" onclick="document.getElementById('sp-input').click()">📤 Subir archivo</button>
+            <input type="file" id="sp-input" multiple style="display:none" onchange="spUpload(this)">
+          </div>
+        </div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('sp-input').click()">
+          <div class="drop-zone-ico">📤</div>
+          <div class="drop-zone-ttl">Arrastra archivos o haz clic</div>
+          <div class="drop-zone-sub">PDF, imágenes, Word, Excel · Se suben directamente a SharePoint</div>
+        </div>
+        <div class="prog-wrap" id="sp-prog">
+          <div class="prog-lbl" id="sp-prog-lbl">Preparando…</div>
+          <div class="prog-bg"><div class="prog-bar" id="sp-prog-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sp-folders" style="margin-top:4px">
+          <div class="sp-folder" onclick="openSP()"><div class="sp-folder-ico">📁</div><div class="sp-folder-nm">Órdenes de trabajo</div><div class="sp-folder-cnt">42 archivos</div></div>
+          <div class="sp-folder" onclick="openSP()"><div class="sp-folder-ico">📷</div><div class="sp-folder-nm">Evidencias fotográficas</div><div class="sp-folder-cnt" id="foto-cnt">0 archivos</div></div>
+          <div class="sp-folder" onclick="openSP()"><div class="sp-folder-ico">📊</div><div class="sp-folder-nm">Informes</div><div class="sp-folder-cnt">15 archivos</div></div>
+          <div class="sp-folder" onclick="openSP()"><div class="sp-folder-ico">📖</div><div class="sp-folder-nm">Manuales</div><div class="sp-folder-cnt">8 archivos</div></div>
+        </div>
+        <div class="sp-file-list" id="sp-files">
+          <div class="sp-file-item"><span class="sp-file-ico">📄</span><div><div class="sp-file-nm">Informe_OT-0997.pdf</div><div class="sp-file-meta">234 KB · Hoy 9:10 AM</div></div><span class="sp-file-link" onclick="openSP()">Ver</span></div>
+        </div>
+      </div>
+
+      <!-- ORGANIGRAMA -->
+      <div class="section" id="sec-organigrama">
+        <div class="sec-hdr"><div class="sec-ttl">Organigrama · Equipo Técnico</div></div>
+        <div id="org-content"></div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="section" id="sec-configuracion">
+        <div class="sec-hdr"><div class="sec-ttl">Configuración del sistema</div></div>
+
+        <!-- Sesión activa -->
+        <div class="cfg-block">
+          <div class="cfg-lbl">Sesión activa</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div style="font-size:15px;font-weight:700;color:#0f172a" id="cfg-nm">—</div><div style="font-size:12px;color:#64748b" id="cfg-rl">—</div></div>
+            <button class="btn-danger" onclick="doLogout()">🚪 Cerrar sesión</button>
+          </div>
+        </div>
+
+        <!-- Usuarios registrados -->
+        <div class="cfg-block">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="cfg-lbl" style="margin-bottom:0">Usuarios registrados</div>
+            <button class="btn-danger" onclick="borrarTodosUsuarios()">🗑 Borrar usuarios extra</button>
+          </div>
+          <div id="users-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:0"></div>
+        </div>
+
+        <!-- Facturas -->
+        <div class="cfg-block">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="cfg-lbl" style="margin-bottom:0">Facturas registradas</div>
+            <button class="btn-danger" onclick="borrarTodasFacturas()">🗑 Borrar todas las facturas</button>
+          </div>
+          <div id="cfg-facturas-list" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto"></div>
+          <div id="cfg-facturas-empty" style="font-size:12px;color:#94a3b8;text-align:center;padding:16px;display:none">No hay facturas registradas</div>
+        </div>
+
+        <!-- Reportes técnicos -->
+        <div class="cfg-block">
+          <div class="cfg-lbl">Reportes de técnicos (caché)</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:10px">Los reportes se sincronizan automáticamente desde el panel del técnico.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-secondary" onclick="toggleStorage()">📊 Ver datos raw</button>
+            <button class="btn-danger" onclick="borrarReportes()">🗑 Limpiar reportes</button>
+          </div>
+          <pre id="storage-pre"></pre>
+        </div>
+
+        <!-- SharePoint -->
+        <div class="cfg-block">
+          <div class="cfg-lbl">SharePoint · Azure</div>
+          <div style="font-size:12px;color:#374151;margin-bottom:8px">Carpeta conectada: <strong>BANCO MUNDO MUJER · Seguimiento Ingeniería</strong></div>
+          <button class="btn-primary" onclick="openSP()">☁️ Abrir SharePoint →</button>
+        </div>
+
+        <div class="cfg-block">
+          <div class="cfg-lbl">Sistema</div>
+          <div style="font-size:12px;color:#94a3b8">Versión 1.0.0 · © 2026 iseguras.com.co · Sync localStorage cada 3s</div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+    <div class="footer"><span>© 2026 Banco · Sistema de Gestión de Mantenimientos · iseguras.com.co</span><span>Versión 1.0.0</span></div>
+  </div><!-- /main-wrap -->
+</div><!-- /page-dashboard -->
+
+<!-- MODAL: Link técnico -->
+<div class="modal-bg" id="modal-link" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🔗 Link para técnicos</div>
+      <button class="modal-close" onclick="document.getElementById('modal-link').classList.remove('open')">✕</button>
+    </div>
+
+    <!-- Si tiene URL configurada -->
+    <div id="link-configured" style="display:none">
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">Manda este link a los técnicos por WhatsApp. Lo abren en el celular y reportan al instante.</p>
+      <div class="link-box">
+        <span id="link-url" style="flex:1;word-break:break-all;font-size:12px">—</span>
+        <button class="btn-copy" onclick="copyLink()">Copiar</button>
+      </div>
+      <a class="btn-wa" id="wa-link" href="#" target="_blank">💬 Enviar por WhatsApp</a>
+      <button onclick="document.getElementById('link-configured').style.display='none';document.getElementById('link-setup').style.display='block'" style="width:100%;padding:8px;background:transparent;border:1px solid #e2e8f0;border-radius:10px;font-size:11px;color:#94a3b8;cursor:pointer;margin-bottom:12px">✏️ Cambiar URL</button>
+    </div>
+
+    <!-- Configurar URL -->
+    <div id="link-setup">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.7">
+        <b>¿Cómo obtener el link?</b><br>
+        Sube <code style="background:#dbeafe;padding:1px 5px;border-radius:4px">tecnico.html</code> a SharePoint o a <a href="https://netlify.com/drop" target="_blank" style="color:#1e6bf2;font-weight:700">netlify.com/drop</a>, copia la URL y pégala aquí.
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">URL del tecnico.html</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="inp-url-prod" type="url" placeholder="https://banco-iseguras.netlify.app" style="flex:1;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151">
+        <button onclick="guardarURLProd()" style="background:#1e6bf2;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Guardar</button>
+      </div>
+      <div id="url-err" style="display:none;font-size:11px;color:#dc2626;margin-bottom:8px"></div>
+    </div>
+
+    <!-- Técnicos que han reportado -->
+    <div style="border-top:1px solid #f1f5f9;padding-top:12px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:8px">Técnicos que han reportado</div>
+      <div class="reported-list" id="reported-list"><p style="font-size:12px;color:#94a3b8;text-align:center">Sin reportes aún</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nueva OT -->
+<div class="modal-bg" id="modal-ot" onclick="if(event.target===this)closeModal('modal-ot')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-ttl">📋 Nueva Orden de Trabajo</div>
+      <button class="modal-close" onclick="closeModal('modal-ot')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="grid-column:1/-1">
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Descripción</div>
+        <input id="ot-desc" type="text" placeholder="Ej. Mantenimiento preventivo ATM" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Técnico</div>
+        <select id="ot-tec" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="">Seleccionar…</option>
+          <option>Eduardo Velaides</option><option>Gustavo Zapata</option>
+          <option>Jaime Quintanilla</option><option>Omar Rojas</option>
+          <option>Jairo Ruales</option><option>Luis Bernal</option>
+          <option>Maury Peñaranda</option><option>Fredy Guzman</option>
+          <option>Diego Rozo</option><option>Cesar Florez</option>
+          <option>Juan Santamaria</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departamento</div>
+        <input id="ot-depto" type="text" placeholder="Ej. Cundinamarca" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Oficina / Sucursal</div>
+        <input id="ot-ofic" type="text" placeholder="Ej. Bogotá Centro" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Fecha</div>
+        <input id="ot-fecha" type="date" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Estado inicial</div>
+        <select id="ot-est" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="Pendiente">Pendiente</option>
+          <option value="En ruta">En ruta</option>
+          <option value="En proceso">En proceso</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+      </div>
+    </div>
+    <div id="ot-err" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;font-size:12px;color:#991b1b;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" style="flex:1;padding:12px" onclick="guardarOT()">💾 Crear OT</button>
+      <button class="btn-secondary" style="padding:12px 18px" onclick="closeModal('modal-ot')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo Correctivo -->
+<div class="modal-bg" id="modal-correctivo" onclick="if(event.target===this)closeModal('modal-correctivo')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🔧 Registrar Correctivo</div>
+      <button class="modal-close" onclick="closeModal('modal-correctivo')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="grid-column:1/-1">
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Descripción del problema</div>
+        <input id="c-desc" type="text" placeholder="Ej. Falla en sistema de enfriamiento ATM" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Técnico</div>
+        <select id="c-tecnico" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="">Seleccionar…</option>
+          <option>Eduardo Velaides</option><option>Gustavo Zapata</option>
+          <option>Jaime Quintanilla</option><option>Omar Rojas</option>
+          <option>Jairo Ruales</option><option>Luis Bernal</option>
+          <option>Maury Peñaranda</option><option>Fredy Guzman</option>
+          <option>Diego Rozo</option><option>Cesar Florez</option>
+          <option>Juan Santamaria</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departamento</div>
+        <input id="c-depto" type="text" placeholder="Ej. Cundinamarca" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Oficina / Sucursal</div>
+        <input id="c-oficina" type="text" placeholder="Ej. Bogotá Centro" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Fecha reporte</div>
+        <input id="c-fecha" type="date" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Prioridad</div>
+        <select id="c-prior" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="Alta">🔴 Alta</option>
+          <option value="Media">🟡 Media</option>
+          <option value="Baja">🟢 Baja</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Observaciones</div>
+        <textarea id="c-obs" rows="2" placeholder="Describe la falla, materiales necesarios, etc." style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;resize:none"></textarea>
+      </div>
+    </div>
+    <div id="c-err" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;font-size:12px;color:#991b1b;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button style="flex:1;padding:12px;background:#d97706;border:none;border-radius:10px;color:#fff;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer" onclick="guardarCorrectivo()">🔧 Registrar correctivo</button>
+      <button class="btn-secondary" style="padding:12px 18px" onclick="closeModal('modal-correctivo')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nueva Factura -->
+<div class="modal-bg" id="modal-factura" onclick="if(event.target===this)closeModal('modal-factura')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-ttl">📑 Nueva Factura</div>
+      <button class="modal-close" onclick="closeModal('modal-factura')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Concepto</div>
+        <input id="f-concepto" type="text" placeholder="Ej. Mantenimiento preventivo ATM" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Técnico</div>
+        <select id="f-tecnico" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="">Seleccionar…</option>
+          <option>Eduardo Velaides</option><option>Gustavo Zapata</option>
+          <option>Jaime Quintanilla</option><option>Omar Rojas</option>
+          <option>Jairo Ruales</option><option>Luis Bernal</option>
+          <option>Maury Peñaranda</option><option>Fredy Guzman</option>
+          <option>Diego Rozo</option><option>Cesar Florez</option>
+          <option>Juan Santamaria</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Valor (COP)</div>
+        <input id="f-valor" type="number" placeholder="2400000" min="0" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Fecha</div>
+        <input id="f-fecha" type="date" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Departamento</div>
+        <input id="f-depto" type="text" placeholder="Cundinamarca" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Estado</div>
+        <select id="f-estado" style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;-webkit-appearance:none">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pagada">Pagada</option>
+          <option value="Vencida">Vencida</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Notas (opcional)</div>
+      <textarea id="f-notas" rows="2" placeholder="Observaciones, OT relacionada, etc." style="width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;resize:none"></textarea>
+    </div>
+    <div id="f-err" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;font-size:12px;color:#991b1b;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" style="flex:1;padding:12px" onclick="guardarFactura()">💾 Guardar factura</button>
+      <button class="btn-secondary" style="padding:12px 18px" onclick="closeModal('modal-factura')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ========== CONSTANTS ==========
+const SP_URL='https://iseguras.sharepoint.com/sites/SeguimientoIngenieria/Documentos%20compartidos/Forms/AllItems.aspx?id=%2Fsites%2FSeguimientoIngenieria%2FDocumentos%20compartidos%2FGeneral%2FSeguimiento%20Ingenieria%2FProyectos%5F2026%2FBANCO%20MUNDO%20MUJER&viewid=3037b41c%2D8ef8%2D4c03%2D81f5%2D7eb8cfe04ba5';
+
+const TECNICOS_BASE=[
+  {id:'EV',nombre:'Eduardo Velaides', ini:'EV',color:'#0e7490',depts:'Cesar, Atlántico',       ofic:18,lat:10.96,lng:-74.80},
+  {id:'GZ',nombre:'Gustavo Zapata',   ini:'GZ',color:'#7c3aed',depts:'Bolívar, Córdoba, Sucre', ofic:15,lat:8.75, lng:-75.88},
+  {id:'JQ',nombre:'Jaime Quintanilla',ini:'JQ',color:'#b45309',depts:'Santander',                ofic:6, lat:7.07, lng:-73.11},
+  {id:'OR',nombre:'Omar Rojas',       ini:'OR',color:'#16a34a',depts:'Boyacá, Casanare, Meta',   ofic:16,lat:4.28, lng:-73.04},
+  {id:'JR',nombre:'Jairo Ruales',     ini:'JR',color:'#d97706',depts:'Cauca, Valle Del Cauca',   ofic:37,lat:3.86, lng:-76.49},
+  {id:'LB',nombre:'Luis Bernal',      ini:'LB',color:'#dc2626',depts:'Nariño',                   ofic:21,lat:1.21, lng:-77.28},
+  {id:'MP',nombre:'Maury Peñaranda',  ini:'MP',color:'#0284c7',depts:'Putumayo, Huila, Caquetá', ofic:18,lat:1.61, lng:-75.60},
+  {id:'FG',nombre:'Fredy Guzman',     ini:'FG',color:'#15803d',depts:'Tolima, Meta',              ofic:20,lat:4.44, lng:-75.23},
+  {id:'DR',nombre:'Diego Rozo',       ini:'DR',color:'#1e6bf2',depts:'Cundinamarca',              ofic:28,lat:4.71, lng:-74.07},
+  {id:'CF',nombre:'Cesar Florez',     ini:'CF',color:'#9333ea',depts:'Quindío, Risaralda, Caldas',ofic:13,lat:4.53, lng:-75.68},
+  {id:'JS',nombre:'Juan Santamaria',  ini:'JS',color:'#0891b2',depts:'Magdalena, Guajira',        ofic:6, lat:11.24,lng:-74.19},
+];
+
+// ========== USER MANAGEMENT (localStorage) ==========
+function getUsers(){
+  // Si ya se guardó algo en localStorage (incluso array vacío) usar eso
+  const raw=localStorage.getItem('banco_users');
+  if(raw!==null){
+    try{return JSON.parse(raw)}catch(e){return[]}
+  }
+  // Primera vez — cargar defaults
+  const defaults=[
+    {nombre:'William Higuera García',user:'William Higuera',rol:'Coordinador del Proyecto',pass:h('admin123'),color:'#1e6bf2'},
+    {nombre:'Abel Vargas Alfonso',   user:'Abel Vargas',    rol:'Coordinador SGSST · MA',  pass:h('admin123'),color:'#475569'},
+    {nombre:'Supervisor General',    user:'Supervisor',     rol:'Supervisión General',      pass:h('super456'),color:'#7c3aed'},
+  ];
+  localStorage.setItem('banco_users',JSON.stringify(defaults));
+  return defaults;
+}
+function saveUsers(users){localStorage.setItem('banco_users',JSON.stringify(users))}
+function h(s){let n=0;for(let i=0;i<s.length;i++)n=(Math.imul(31,n)+s.charCodeAt(i))|0;return n.toString(16)}
+
+let currentUser=null;
+
+// ========== RENDER QUICK PILLS ==========
+function renderPills(){
+  const users=getUsers();
+  const container=document.getElementById('quick-pills');
+  if(!container)return;
+  if(!users.length){
+    container.innerHTML='<p style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;width:100%;padding:4px 0">Sin usuarios — registra uno con el botón de abajo</p>';
+    document.getElementById('l-user').value='';
+    document.getElementById('l-pass').value='';
+    window._quickPass=null;
+    return;
+  }
+  container.innerHTML=users.map((u,i)=>{
+    const ini=(u.nombre||u.user).split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const first=(u.nombre||u.user).split(' ')[0];
+    return `<div class="upill${i===0?' active':''}" onclick="quickPick(this,'${u.user}','${u.pass}')">
+      <div class="upill-av" style="background:${u.color||'#1e6bf2'}">${ini}</div>${first}
+    </div>`;
+  }).join('');
+  if(users.length>0){
+    document.getElementById('l-user').value=users[0].user;
+    document.getElementById('l-pass').value='';
+  }
+}
+
+function quickPick(el,user,storedPass){
+  document.querySelectorAll('.upill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('l-user').value=user;
+  document.getElementById('l-err').classList.remove('show');
+  // Set a temp ref so login knows which user was quick-picked
+  el.dataset.storedPass=storedPass;
+  window._quickPass=storedPass;
+}
+
+// ========== LOGIN ==========
+function doLogin(){
+  const uv=document.getElementById('l-user').value.trim();
+  const pv=document.getElementById('l-pass').value;
+  const btn=document.getElementById('l-btn');
+  const err=document.getElementById('l-err');
+  if(!uv){err.textContent='Escribe tu usuario.';err.classList.add('show');return}
+  if(!pv&&!window._quickPass){err.textContent='Escribe tu contraseña.';err.classList.add('show');return}
+
+  btn.textContent='⏳ Verificando…';btn.style.opacity='.7';btn.style.pointerEvents='none';
+  err.classList.remove('show');
+
+  setTimeout(()=>{
+    const users=getUsers();
+    if(!users.length){
+      btn.style.opacity='1';btn.style.pointerEvents='auto';
+      btxt.textContent='Ingresar al sistema';
+      err.textContent='No hay usuarios registrados. Usa el botón "Registrar nuevo usuario".';
+      err.classList.add('show');
+      window._quickPass=null;return;
+    }
+    const user=users.find(u=>u.user.toLowerCase()===uv.toLowerCase()||u.nombre.toLowerCase().includes(uv.toLowerCase()));
+    const passToCheck=pv?h(pv):(window._quickPass||'');
+
+    if(!user||user.pass!==passToCheck){
+      btn.textContent='Ingresar al sistema';btn.style.opacity='1';btn.style.pointerEvents='auto';
+      err.textContent='Usuario o contraseña incorrectos.';err.classList.add('show');
+      window._quickPass=null;return;
+    }
+    currentUser=user;
+    window._quickPass=null;
+    sessionStorage.setItem('banco_sess',JSON.stringify({nombre:user.nombre,user:user.user,rol:user.rol,color:user.color||'#1e6bf2'}));
+    btn.textContent='✓ Acceso concedido';btn.style.background='#16a34a';
+    setTimeout(goToDashboard,600);
+  },700);
+}
+
+// ========== REGISTER ==========
+function toggleReg(){
+  const f=document.getElementById('reg-form');
+  f.classList.toggle('show');
+}
+function registerUser(){
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const user=document.getElementById('r-user').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  const pass2=document.getElementById('r-pass2').value;
+  const rol=document.getElementById('r-rol').value;
+  const err=document.getElementById('r-err');
+
+  if(!nombre||!user||!pass){err.textContent='Completa nombre, usuario y contraseña.';err.style.display='block';return}
+  if(pass!==pass2){err.textContent='Las contraseñas no coinciden.';err.style.display='block';return}
+  if(pass.length<4){err.textContent='La contraseña debe tener al menos 4 caracteres.';err.style.display='block';return}
+
+  const users=getUsers();
+  if(users.find(u=>u.user.toLowerCase()===user.toLowerCase())){
+    err.textContent='Ese usuario ya existe.';err.style.display='block';return;
+  }
+  const colors=['#1e6bf2','#7c3aed','#0891b2','#16a34a','#d97706','#dc2626','#0e7490','#9333ea'];
+  const newUser={nombre,user,rol,pass:h(pass),color:colors[users.length%colors.length]};
+  users.push(newUser);
+  saveUsers(users);
+  err.style.display='none';
+  // Clear form
+  ['r-nombre','r-user','r-pass','r-pass2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('reg-form').classList.remove('show');
+  renderPills();
+  toast('✅ Usuario "'+user+'" registrado correctamente');
+}
+
+// ========== GO TO DASHBOARD ==========
+function goToDashboard(){
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-dashboard').classList.add('active');
+  // Load session info
+  const sess=sessionStorage.getItem('banco_sess');
+  if(sess){
+    const s=JSON.parse(sess);
+    const ini=s.nombre.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const first=s.nombre.split(' ').slice(0,2).join(' ');
+    document.getElementById('u-av').textContent=ini;
+    document.getElementById('u-av').style.background=s.color||'#1e6bf2';
+    document.getElementById('u-nm').textContent=first;
+    document.getElementById('u-rl').textContent=s.rol;
+    document.getElementById('cfg-nm').textContent=s.nombre;
+    document.getElementById('cfg-rl').textContent=s.rol;
+  }
+  // Init map & data
+  initMap();
+  renderAll();
+  renderFacturas();
+  setInterval(poll,3000);
+  // Force map render after DOM settles
+  setTimeout(()=>{if(mapInst){mapInst.invalidateSize();renderMarkers(getMerged())}},500);
+}
+
+function doLogout(){
+  sessionStorage.removeItem('banco_sess');
+  currentUser=null;
+  document.getElementById('page-dashboard').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+  document.getElementById('l-btn').textContent='Ingresar al sistema';
+  document.getElementById('l-btn').style.background='#1e6bf2';
+  document.getElementById('l-btn').style.opacity='1';
+  document.getElementById('l-btn').style.pointerEvents='auto';
+  window._quickPass=null;
+  renderPills();
+}
+
+// ========== NAVIGATION ==========
+const SECTIONS=['dashboard','tecnicos','ordenes','rutas','preventivo','correctivo','informes','facturacion','documentos','organigrama','configuracion'];
+const TITLES={dashboard:'Dashboard',tecnicos:'Técnicos',ordenes:'Órdenes',rutas:'Rutas',preventivo:'Mantenimiento Preventivo',correctivo:'Mantenimiento Correctivo',informes:'Informes',facturacion:'Facturación',documentos:'Documentos',organigrama:'Organigrama',configuracion:'Configuración'};
+
+function showSection(name){
+  SECTIONS.forEach(s=>{
+    const sec=document.getElementById('sec-'+s);
+    const nb=document.getElementById('nb-'+s);
+    if(sec){sec.classList.toggle('active',s===name)}
+    if(nb){nb.classList.toggle('active',s===name)}
+  });
+  document.getElementById('page-title').textContent=TITLES[name]||name;
+
+  if(name==='dashboard'){setTimeout(()=>{if(mapInst)mapInst.invalidateSize();else initMap()},100)}
+  if(name==='rutas'){setTimeout(initRutasMap,100)}
+  if(name==='organigrama'){renderOrg()}
+  if(name==='tecnicos'){renderAll()}
+  if(name==='documentos'){initDrop()}
+  if(name==='configuracion'){renderUsersList();renderConfigFacturas()}
+  if(name==='facturacion'){renderFacturas();initFacModal()}
+  if(name==='correctivo'){renderCorrectivos();initCorrModal()}
+  if(name==='preventivo'){/* static */}
+  if(name==='ordenes'){renderOTs()}
+
+// ========== ÓRDENES DE TRABAJO ==========
+function getOTs(){
+  try{
+    const raw=localStorage.getItem('banco_ots');
+    if(raw!==null)return JSON.parse(raw);
+    // Defaults primera vez
+    const defaults=[
+      {num:'OT-1001',desc:'Mantenimiento preventivo ATM',tecnico:'Diego Rozo',depto:'Cundinamarca',ofic:'Bogotá Centro',fecha:'2026-06-01',estado:'En proceso',ts:Date.now()-5000},
+      {num:'OT-1002',desc:'Revisión sistema eléctrico',tecnico:'Eduardo Velaides',depto:'Atlántico',ofic:'Barranquilla Norte',fecha:'2026-06-02',estado:'En proceso',ts:Date.now()-4000},
+      {num:'OT-1003',desc:'Instalación de equipos',tecnico:'Jairo Ruales',depto:'Valle Del Cauca',ofic:'Cali Sur',fecha:'2026-06-03',estado:'En ruta',ts:Date.now()-3000},
+      {num:'OT-1004',desc:'Mantenimiento correctivo',tecnico:'Luis Bernal',depto:'Nariño',ofic:'Pasto Centro',fecha:'2026-05-28',estado:'Finalizado',ts:Date.now()-2000},
+      {num:'OT-1005',desc:'Revisión semestral ATM',tecnico:'Maury Peñaranda',depto:'Huila',ofic:'Neiva Principal',fecha:'2026-06-04',estado:'En proceso',ts:Date.now()-1000},
+    ];
+    localStorage.setItem('banco_ots',JSON.stringify(defaults));
+    return defaults;
+  }catch(e){return[]}
+}
+function saveOTs(ots){localStorage.setItem('banco_ots',JSON.stringify(ots))}
+
+function guardarOT(){
+  const desc =document.getElementById('ot-desc').value.trim();
+  const tec  =document.getElementById('ot-tec').value;
+  const depto=document.getElementById('ot-depto').value.trim();
+  const ofic =document.getElementById('ot-ofic').value.trim();
+  const fecha=document.getElementById('ot-fecha').value;
+  const est  =document.getElementById('ot-est').value;
+  const err  =document.getElementById('ot-err');
+  if(!desc||!tec||!depto){err.textContent='Completa descripción, técnico y departamento.';err.style.display='block';return;}
+  err.style.display='none';
+  const ots=getOTs();
+  const num='OT-'+String(Date.now()).slice(-4);
+  ots.push({num,desc,tecnico:tec,depto,ofic,fecha,estado:est,ts:Date.now()});
+  saveOTs(ots);
+  ['ot-desc','ot-depto','ot-ofic'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ot-tec').value='';
+  document.getElementById('ot-est').value='Pendiente';
+  closeModal('modal-ot');
+  renderOTs();
+  toast('✅ '+num+' creada');
+}
+
+function renderOTs(){
+  const ots=getOTs();
+  const filter=(document.getElementById('ot-filter')||{}).value||'';
+  const filtered=filter?ots.filter(o=>o.estado===filter):ots;
+  const tbody=document.getElementById('ot-tbody');
+  const empty=document.getElementById('ot-empty');
+  // KPIs
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('ot-total',ots.length);
+  s('ot-proceso',ots.filter(o=>o.estado==='En proceso').length);
+  s('ot-ruta',ots.filter(o=>o.estado==='En ruta').length);
+  s('ot-final',ots.filter(o=>o.estado==='Finalizado').length);
+  if(!tbody)return;
+  if(!ots.length){if(empty)empty.style.display='block';tbody.innerHTML='';return;}
+  if(empty)empty.style.display='none';
+  const bc={Pendiente:'b-gray','En ruta':'b-blue','En proceso':'b-amber',Finalizado:'b-green'};
+  tbody.innerHTML=filtered.map(o=>`<tr>
+    <td style="font-weight:700;color:#1e6bf2">${o.num}</td>
+    <td>${o.desc}</td>
+    <td style="color:#64748b">${o.depto}</td>
+    <td>${o.tecnico}</td>
+    <td style="font-size:11px;color:#94a3b8">${o.fecha||'—'}</td>
+    <td><span class="badge ${bc[o.estado]||'b-gray'}">${o.estado}</span></td>
+    <td style="white-space:nowrap">
+      <button onclick="avanzarOT('${o.num}')" style="font-size:10px;color:#1e6bf2;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px;cursor:pointer">Cambiar</button>
+      <button onclick="eliminarOT('${o.num}')" style="font-size:10px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:3px">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function avanzarOT(num){
+  const ots=getOTs();
+  const o=ots.find(x=>x.num===num);if(!o)return;
+  const estados=['Pendiente','En ruta','En proceso','Finalizado'];
+  o.estado=estados[(estados.indexOf(o.estado)+1)%estados.length];
+  saveOTs(ots);renderOTs();toast(num+' → '+o.estado);
+}
+function eliminarOT(num){
+  if(!confirm('¿Eliminar OT '+num+'?'))return;
+  saveOTs(getOTs().filter(o=>o.num!==num));
+  renderOTs();toast('🗑 OT '+num+' eliminada');
+}
+function descargarExcelOTs(){
+  const ots=getOTs();
+  if(!ots.length){toast('⚠️ No hay OTs para exportar');return;}
+  const BOM='\uFEFF';
+  const headers=['N° OT','Descripción','Técnico','Departamento','Oficina','Fecha','Estado'];
+  const rows=ots.map(o=>[o.num,o.desc,o.tecnico,o.depto,o.ofic||'',o.fecha||'',o.estado]
+    .map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const csv=BOM+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='OrdenesTrabajo_BANCO_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast('📥 Excel OTs descargado');
+}
+
+// Init fecha en modal OT
+function initOTModal(){
+  const el=document.getElementById('ot-fecha');
+  if(el&&!el.value){const d=new Date();el.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+}
+
+// ========== CORRECTIVOS ==========
+function getCorrectivos(){try{return JSON.parse(localStorage.getItem('banco_correctivos')||'[]')}catch(e){return[]}}
+function saveCorrectivos(c){localStorage.setItem('banco_correctivos',JSON.stringify(c))}
+
+function initCorrModal(){
+  const d=new Date();
+  const el=document.getElementById('c-fecha');
+  if(el&&!el.value)el.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function guardarCorrectivo(){
+  const desc  =document.getElementById('c-desc').value.trim();
+  const tecnico=document.getElementById('c-tecnico').value;
+  const depto =document.getElementById('c-depto').value.trim();
+  const oficina=document.getElementById('c-oficina').value.trim();
+  const fecha =document.getElementById('c-fecha').value;
+  const prior =document.getElementById('c-prior').value;
+  const obs   =document.getElementById('c-obs').value.trim();
+  const err   =document.getElementById('c-err');
+  if(!desc||!tecnico||!depto){err.textContent='Completa descripción, técnico y departamento.';err.style.display='block';return;}
+  err.style.display='none';
+  const correctivos=getCorrectivos();
+  const num='CORR-'+String(correctivos.length+1).padStart(4,'0');
+  correctivos.push({num,desc,tecnico,depto,oficina,fecha,prioridad:prior,obs,estado:'Abierto',ts:Date.now()});
+  saveCorrectivos(correctivos);
+  ['c-desc','c-depto','c-oficina','c-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('c-tecnico').value='';
+  document.getElementById('c-prior').value='Alta';
+  closeModal('modal-correctivo');
+  renderCorrectivos();
+  toast('✅ Correctivo '+num+' registrado');
+}
+
+function renderCorrectivos(){
+  const correctivos=getCorrectivos();
+  const filter=(document.getElementById('corr-filter')||{}).value||'';
+  const filtered=filter?correctivos.filter(c=>c.estado===filter):correctivos;
+  const tbody=document.getElementById('corr-tbody');
+  const empty=document.getElementById('corr-empty');
+  // KPIs
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('corr-total',correctivos.length);
+  s('corr-abiertos',correctivos.filter(c=>c.estado==='Abierto'||c.estado==='En proceso').length);
+  s('corr-cerrados',correctivos.filter(c=>c.estado==='Cerrado').length);
+  if(!tbody)return;
+  if(!correctivos.length){if(empty)empty.style.display='block';tbody.innerHTML='';return;}
+  if(empty)empty.style.display='none';
+  const priorColor={Alta:'b-red',Media:'b-amber',Baja:'b-green'};
+  const estColor={Abierto:'b-red','En proceso':'b-amber',Cerrado:'b-green'};
+  tbody.innerHTML=filtered.map(c=>`<tr>
+    <td style="font-weight:700;color:#d97706">${c.num}</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.desc}</td>
+    <td>${c.tecnico}</td>
+    <td>${c.depto}</td>
+    <td style="color:#64748b;font-size:11px">${c.oficina||'—'}</td>
+    <td style="font-size:11px;color:#94a3b8">${c.fecha||'—'}</td>
+    <td><span class="badge ${priorColor[c.prioridad]||'b-gray'}">${c.prioridad||'—'}</span></td>
+    <td><span class="badge ${estColor[c.estado]||'b-gray'}">${c.estado}</span></td>
+    <td style="white-space:nowrap">
+      <button onclick="avanzarCorrectivo('${c.num}')" style="font-size:10px;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:3px 8px;cursor:pointer">Avanzar</button>
+      <button onclick="eliminarCorrectivo('${c.num}')" style="font-size:10px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:3px">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function avanzarCorrectivo(num){
+  const correctivos=getCorrectivos();
+  const c=correctivos.find(x=>x.num===num);
+  if(!c)return;
+  const estados=['Abierto','En proceso','Cerrado'];
+  c.estado=estados[(estados.indexOf(c.estado)+1)%estados.length];
+  saveCorrectivos(correctivos);renderCorrectivos();
+  toast(num+' → '+c.estado);
+}
+function eliminarCorrectivo(num){
+  if(!confirm('¿Eliminar correctivo '+num+'?'))return;
+  saveCorrectivos(getCorrectivos().filter(c=>c.num!==num));
+  renderCorrectivos();toast('🗑 Correctivo '+num+' eliminado');
+}
+
+function descargarExcelPreventivo(){
+  const BOM='\uFEFF';
+  const headers=['Técnico','Departamentos','N° Oficinas','Estado'];
+  const rows=[
+    ['Eduardo Velaides','Cesar, Atlántico',18,'Activo'],
+    ['Gustavo Zapata','Bolívar, Córdoba, Sucre',15,'Activo'],
+    ['Jaime Quintanilla','Santander',6,'Activo'],
+    ['Omar Rojas','Boyacá, Casanare, Meta',16,'Activo'],
+    ['Jairo Ruales','Cauca, Valle Del Cauca',37,'Activo'],
+    ['Luis Bernal','Nariño',21,'Activo'],
+    ['Maury Peñaranda','Putumayo, Huila, Caquetá',18,'Activo'],
+    ['Fredy Guzman','Tolima, Meta',20,'Activo'],
+    ['Diego Rozo','Cundinamarca',28,'Activo'],
+    ['Cesar Florez','Quindío, Risaralda, Caldas',13,'Activo'],
+    ['Juan Santamaria','Magdalena, Guajira',6,'Activo'],
+    ['TOTAL','',189,''],
+  ].map(r=>r.map(v=>typeof v==='string'?'"'+v.replace(/"/g,'""')+'"':v).join(','));
+  const csv=BOM+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Preventivo_BANCO_MUNDO_MUJER_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast('📥 Excel Preventivo descargado');
+}
+
+function descargarExcelCorrectivo(){
+  const correctivos=getCorrectivos();
+  if(!correctivos.length){toast('⚠️ No hay correctivos para exportar');return;}
+  const BOM='\uFEFF';
+  const headers=['N°','Descripción','Técnico','Departamento','Oficina','Fecha','Prioridad','Estado','Observaciones'];
+  const rows=correctivos.map(c=>[c.num,c.desc,c.tecnico,c.depto,c.oficina||'',c.fecha||'',c.prioridad||'',c.estado,c.obs||'']
+    .map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const csv=BOM+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Correctivos_BANCO_MUNDO_MUJER_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast('📥 Excel Correctivos descargado ('+correctivos.length+' registros)');
+}
+}
+
+// ========== MODAL HELPERS ==========
+function openModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  m.classList.add('open');
+  if(id==='modal-factura')initFacModal();
+  if(id==='modal-ot')initOTModal();
+}
+function closeModal(id){
+  const m=document.getElementById(id);
+  if(m)m.classList.remove('open');
+}
+
+// ========== FACTURAS ==========
+function getFacturas(){try{return JSON.parse(localStorage.getItem('banco_facturas')||'[]')}catch(e){return[]}}
+function saveFacturas(f){localStorage.setItem('banco_facturas',JSON.stringify(f))}
+
+function fmtPeso(n){
+  if(!n||isNaN(n))return '$0';
+  if(n>=1000000000)return '$'+(n/1000000000).toFixed(1)+'B';
+  if(n>=1000000)return '$'+(n/1000000).toFixed(1)+'M';
+  return '$'+Number(n).toLocaleString('es-CO');
+}
+
+function guardarFactura(){
+  const concepto=document.getElementById('f-concepto').value.trim();
+  const tecnico =document.getElementById('f-tecnico').value;
+  const valor   =parseFloat(document.getElementById('f-valor').value);
+  const fecha   =document.getElementById('f-fecha').value;
+  const depto   =document.getElementById('f-depto').value.trim();
+  const estado  =document.getElementById('f-estado').value;
+  const notas   =document.getElementById('f-notas').value.trim();
+  const err     =document.getElementById('f-err');
+
+  if(!concepto||!tecnico||!valor||!fecha){
+    err.textContent='Completa concepto, técnico, valor y fecha.';
+    err.style.display='block';return;
+  }
+  err.style.display='none';
+
+  const facturas=getFacturas();
+  const num='FAC-'+String(facturas.length+1).padStart(4,'0');
+  facturas.push({num,concepto,tecnico,valor,fecha,depto,estado,notas,ts:Date.now()});
+  saveFacturas(facturas);
+
+  ['f-concepto','f-depto','f-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  const fv=document.getElementById('f-valor');if(fv)fv.value='';
+  const ft=document.getElementById('f-tecnico');if(ft)ft.value='';
+  document.getElementById('f-estado').value='Pendiente';
+
+  closeModal('modal-factura');
+  renderFacturas();
+  toast('✅ Factura '+num+' guardada');
+}
+
+function renderFacturas(){
+  const facturas=getFacturas();
+  const filter  =(document.getElementById('fac-filter')||{}).value||'';
+  const filtered=filter?facturas.filter(f=>f.estado===filter):facturas;
+
+  const tbody=document.getElementById('fac-tbody');
+  const empty=document.getElementById('fac-empty');
+  if(!tbody)return;
+
+  if(!facturas.length){
+    tbody.innerHTML='';
+    if(empty)empty.style.display='block';
+  } else {
+    if(empty)empty.style.display='none';
+    const facBadge={Pagada:'b-green',Pendiente:'b-amber',Vencida:'b-red'};
+    tbody.innerHTML=filtered.map(f=>`<tr>
+      <td style="font-weight:700;color:#1e6bf2">${f.num}</td>
+      <td>${f.concepto}</td>
+      <td>${f.tecnico}</td>
+      <td style="font-weight:600">${fmtPeso(f.valor)}</td>
+      <td style="color:#94a3b8;font-size:11px">${f.fecha||'—'}</td>
+      <td style="color:#64748b;font-size:11px">${f.depto||f.departamento||'—'}</td>
+      <td><span class="badge ${facBadge[f.estado]||'b-gray'}">${f.estado}</span></td>
+      <td>
+        <button onclick="cambiarEstadoFac('${f.num}')" style="font-size:10px;color:#1e6bf2;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px;cursor:pointer">Cambiar</button>
+        <button onclick="eliminarFactura('${f.num}')" style="font-size:10px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:3px">✕</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  // KPIs
+  const pagadas  =facturas.filter(f=>f.estado==='Pagada');
+  const pendientes=facturas.filter(f=>f.estado==='Pendiente');
+  const vencidas  =facturas.filter(f=>f.estado==='Vencida');
+  const sum=arr=>arr.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('fk-total',fmtPeso(sum(pagadas)));
+  set('fk-count',facturas.length);
+  set('fk-pend',fmtPeso(sum(pendientes)));
+  set('fk-pend-cnt',pendientes.length+' facturas');
+  set('fac-res-pag',pagadas.length+' · '+fmtPeso(sum(pagadas)));
+  set('fac-res-pen',pendientes.length+' · '+fmtPeso(sum(pendientes)));
+  set('fac-res-vec',vencidas.length+' · '+fmtPeso(sum(vencidas)));
+}
+
+function cambiarEstadoFac(num){
+  const facturas=getFacturas();
+  const f=facturas.find(x=>x.num===num);
+  if(!f)return;
+  const estados=['Pendiente','Pagada','Vencida'];
+  f.estado=estados[(estados.indexOf(f.estado)+1)%estados.length];
+  saveFacturas(facturas);renderFacturas();
+  toast('Factura '+num+' → '+f.estado);
+}
+
+function eliminarFactura(num){
+  if(!confirm('¿Eliminar factura '+num+'?'))return;
+  saveFacturas(getFacturas().filter(f=>f.num!==num));
+  renderFacturas();toast('🗑 Factura '+num+' eliminada');
+}
+
+function descargarExcelFacturas(){
+  const facturas=getFacturas();
+  if(!facturas.length){toast('⚠️ No hay facturas para exportar');return;}
+
+  // Construir CSV con BOM UTF-8 para que Excel lo abra correctamente
+  const BOM='\uFEFF';
+  const headers=['N° Factura','Concepto','Técnico','Valor (COP)','Fecha','Departamento','Estado','Notas','OT'];
+  const rows=facturas.map(f=>[
+    f.num||'',
+    '"'+(f.concepto||'').replace(/"/g,'""')+'"',
+    '"'+(f.tecnico||'').replace(/"/g,'""')+'"',
+    f.valor||0,
+    f.fecha||'',
+    '"'+(f.depto||f.departamento||'').replace(/"/g,'""')+'"',
+    f.estado||'',
+    '"'+(f.notas||'').replace(/"/g,'""')+'"',
+    f.ot||''
+  ].join(','));
+
+  // Fila de totales
+  const total=facturas.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  const pagado=facturas.filter(f=>f.estado==='Pagada').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  const pendiente=facturas.filter(f=>f.estado==='Pendiente').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  rows.push('');
+  rows.push('"RESUMEN","","","","","","","",""');
+  rows.push(`"Total general","","",${total},"","","","",""`);
+  rows.push(`"Total pagado","","",${pagado},"","Pagada","","",""`);
+  rows.push(`"Total pendiente","","",${pendiente},"","Pendiente","","",""`);
+
+  const csv=BOM+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download='Facturas_BANCO_MUNDO_MUJER_'+fecha+'.csv';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('📥 Descargando Excel · '+facturas.length+' facturas');
+}
+
+function initFacModal(){
+  const el=document.getElementById('f-fecha');
+  if(el&&!el.value){
+    const d=new Date();
+    el.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+}
+
+// ========== DATA ==========
+function getReportes(){try{return JSON.parse(localStorage.getItem('banco_tecnicos')||'[]')}catch(e){return[]}}
+function getHistorial(){try{return JSON.parse(localStorage.getItem('banco_reportes')||'[]')}catch(e){return[]}}
+
+function getMerged(){
+  const reps=getReportes();
+  const merged=TECNICOS_BASE.map(t=>{
+    const r=reps.find(x=>x.id===t.id);
+    return r?{...t,...r,estado:r.estado||'En campo',ini:r.iniciales||t.ini,depts:r.departamentos||t.depts}:{...t,estado:'En campo'};
+  });
+  // Add field techs not in base
+  reps.filter(r=>!TECNICOS_BASE.find(t=>t.id===r.id)).forEach(r=>{
+    merged.push({...r,ini:r.iniciales||r.nombre.slice(0,2).toUpperCase(),depts:r.departamentos||r.sucursal||'—',color:r.color||'#1e6bf2',ofic:0,estado:r.estado||'En campo'});
+  });
+  return merged;
+}
+
+function badge(estado){
+  const m={'En campo':'b-blue','En ruta':'b-blue','En proceso':'b-amber','Finalizado':'b-green','Incidencia':'b-red','Pendiente':'b-gray'};
+  return `<span class="badge ${m[estado]||'b-gray'}">${estado}</span>`;
+}
+
+// ========== MAP — Leaflet + OpenStreetMap (gratuito, sin API key) ==========
+let mapInst=null,markers={};
+
+function initMap(){
+  if(mapInst){
+    mapInst.invalidateSize();
+    renderMarkers(getMerged());
+    return;
+  }
+  const el=document.getElementById('map');
+  if(!el)return;
+
+  mapInst=L.map('map',{zoomControl:true,scrollWheelZoom:false}).setView([4.5,-74.0],5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom:18
+  }).addTo(mapInst);
+
+  setTimeout(()=>{
+    mapInst.invalidateSize();
+    renderMarkers(getMerged());
+  },300);
+}
+
+function mkIcon(ini,color,sz){
+  return L.divIcon({
+    className:'',
+    iconSize:[sz,sz],
+    iconAnchor:[sz/2,sz/2],
+    popupAnchor:[0,-(sz/2+6)],
+    html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-weight:800;font-size:'+Math.round(sz*.34)+'px;color:#fff">'+ini+'</div>'
+  });
+}
+
+function renderMarkers(tecnicos){
+  if(!mapInst)return;
+  if(!tecnicos)tecnicos=getMerged();
+  tecnicos.forEach(t=>{
+    const ini=t.ini||t.iniciales||(t.nombre||'?').slice(0,2).toUpperCase();
+    const color=t.color||'#1e6bf2';
+    const popup='<div style="font-family:Inter,sans-serif;min-width:170px;padding:4px">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:4px">'+t.nombre+'</div>'+
+      '<div style="font-size:11px;color:#64748b;margin-bottom:6px">📍 '+(t.depts||t.departamentos||'')+'</div>'+
+      '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;background:'+color+'18;color:'+color+';border:1px solid '+color+'44">'+t.estado+'</span>'+
+      (t.ot?'<div style="font-size:10px;color:#94a3b8;margin-top:4px">🔧 '+t.ot+'</div>':'')+
+      (t.hora?'<div style="font-size:10px;color:#94a3b8">🕐 '+t.hora+'</div>':'')+
+      (t.fotos?'<div style="font-size:10px;color:#16a34a">📷 '+t.fotos+' foto(s)</div>':'')+
+      '</div>';
+
+    if(markers[t.id||t.nombre]){
+      markers[t.id||t.nombre].setLatLng([t.lat,t.lng]);
+      markers[t.id||t.nombre].setIcon(mkIcon(ini,color,36));
+      markers[t.id||t.nombre].getPopup().setContent(popup);
+    }else{
+      const mk=L.marker([t.lat,t.lng],{icon:mkIcon(ini,color,36)})
+        .bindPopup(popup,{maxWidth:220,closeButton:false});
+      mk.addTo(mapInst);
+      markers[t.id||t.nombre]=mk;
+    }
+  });
+}
+
+// Rutas map — Leaflet
+let mapRutasInst=null;
+function initRutasMap(){
+  if(mapRutasInst){mapRutasInst.invalidateSize();return;}
+  const el=document.getElementById('map-rutas');
+  if(!el)return;
+  mapRutasInst=L.map('map-rutas',{zoomControl:true,scrollWheelZoom:false}).setView([4.5,-74.0],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap',maxZoom:18
+  }).addTo(mapRutasInst);
+  setTimeout(()=>{
+    mapRutasInst.invalidateSize();
+    TECNICOS_BASE.forEach(t=>{
+      const mk=L.marker([t.lat,t.lng],{icon:mkIcon(t.ini,t.color,36)});
+      mk.bindPopup('<div style="font-family:Inter,sans-serif"><b>'+t.nombre+'</b><br><small style="color:#64748b">'+t.depts+'</small><br><small style="color:#1e6bf2;font-weight:600">'+t.ofic+' oficinas</small></div>',{maxWidth:200,closeButton:false});
+      mk.addTo(mapRutasInst);
+    });
+  },300);
+
+  // Build ruta table
+  const RUTAS=[
+    {t:'Eduardo Velaides',c:'#0e7490',rows:[{d:'Cesar',o:6},{d:'Atlántico',o:12}]},
+    {t:'Juan Santamaria', c:'#0891b2',rows:[{d:'Magdalena',o:4},{d:'Guajira',o:2}]},
+    {t:'Gustavo Zapata',  c:'#7c3aed',rows:[{d:'Bolívar',o:6},{d:'Córdoba',o:4},{d:'Sucre',o:5}]},
+    {t:'Jaime Quintanilla',c:'#b45309',rows:[{d:'Santander',o:6}]},
+    {t:'Omar Rojas',      c:'#16a34a',rows:[{d:'Boyacá',o:4},{d:'Casanare',o:3},{d:'Meta',o:9}]},
+    {t:'Fredy Guzman',    c:'#15803d',rows:[{d:'Tolima',o:11}]},
+    {t:'Diego Rozo',      c:'#1e6bf2',rows:[{d:'Cundinamarca',o:28}]},
+    {t:'Cesar Florez',    c:'#9333ea',rows:[{d:'Quindío',o:5},{d:'Risaralda',o:5},{d:'Caldas',o:3}]},
+    {t:'Jairo Ruales',    c:'#d97706',rows:[{d:'Cauca',o:17},{d:'Valle Del Cauca',o:20}]},
+    {t:'Luis Bernal',     c:'#dc2626',rows:[{d:'Nariño',o:21}]},
+    {t:'Maury Peñaranda', c:'#0284c7',rows:[{d:'Putumayo',o:6},{d:'Huila',o:11},{d:'Caquetá',o:1}]},
+  ];
+  let html2='<div style="display:flex;flex-direction:column;gap:10px">';
+  RUTAS.forEach(g=>{
+    const ini=g.t.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    html2+='<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+g.c+'10;border-bottom:1px solid '+g.c+'25">'+
+      '<div style="width:26px;height:26px;border-radius:50%;background:'+g.c+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;color:#fff">'+ini+'</div>'+
+      '<span style="font-size:12px;font-weight:700;color:'+g.c+'">'+g.t+'</span></div>';
+    g.rows.forEach(r=>{html2+='<div style="display:flex;justify-content:space-between;padding:7px 12px;font-size:12px;background:#fff;border-bottom:1px solid #f8fafc"><span style="color:#374151">'+r.d+'</span><span style="font-weight:600;color:#94a3b8">'+r.o+' ofic.</span></div>'});
+    html2+='</div>';
+  });
+  html2+='</div>';
+  document.getElementById('ruta-table').innerHTML=html2;
+}
+
+
+// ========== RENDER ALL ==========
+let lastHash='';
+function renderAll(){
+  const tecnicos=getMerged();
+  const reps=getReportes();
+  const hist=getHistorial();
+
+  // KPIs
+  document.getElementById('kv-tec').textContent=tecnicos.length;
+  document.getElementById('kv-rep').textContent=reps.length;
+  if(document.getElementById('kv-inf'))document.getElementById('kv-inf').textContent=reps.length;
+
+  // Notif
+  document.getElementById('notif-n').textContent=reps.length;
+  const nb=document.getElementById('nav-badge-tec');
+  nb.textContent=reps.length;nb.classList.toggle('show',reps.length>0);
+
+  // Map — update Leaflet markers
+  if(mapInst)renderMarkers(tecnicos);
+
+  // Dash table
+  const tb=document.getElementById('tbody-dash');
+  if(tb)tb.innerHTML=tecnicos.map(t=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <div class="tav" style="width:28px;height:28px;font-size:11px;background:${t.color}">${t.ini}</div>
+      <span style="font-weight:600">${t.nombre}</span></div></td>
+    <td>${badge(t.estado)}</td>
+    <td style="color:#64748b;font-size:11px">${(t.depts||'').split(',')[0]}</td>
+    <td style="font-size:10px;font-family:monospace;color:#94a3b8">${t.hora||'—'}</td>
+    <td style="font-size:10px;color:#94a3b8">${t.lat?t.lat.toFixed(4)+', '+t.lng.toFixed(4):'—'}</td>
+    <td style="font-size:10px">${t.fotos?'<span style="color:#16a34a;font-weight:600">📷 '+t.fotos+'</span>':'—'}</td>
+  </tr>`).join('');
+
+  // Recent reports
+  const rr=document.getElementById('rep-recent');
+  if(rr){
+    if(!reps.length){rr.innerHTML='<p style="text-align:center;font-size:12px;color:#94a3b8;padding:16px 0">Sin reportes aún.<br><span style="font-size:10px">Los técnicos envían desde tecnico.html</span></p>'}
+    else{rr.innerHTML='<div style="display:flex;flex-direction:column;gap:7px;padding:0 0 4px">'+
+      reps.slice().reverse().slice(0,6).map(r=>`<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:9px">
+        <div class="tav" style="width:26px;height:26px;font-size:10px;background:${r.color||'#1e6bf2'}">${r.iniciales||r.nombre.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.nombre}</div>
+        <div style="font-size:10px;color:#94a3b8">${r.estado} · ${r.hora||''}</div>
+        ${r.fotos?`<div style="font-size:10px;color:#16a34a">📷 ${r.fotos} foto(s)</div>`:''}
+        ${r.totalFacturas?`<div style="font-size:10px;color:#7c3aed;font-weight:600">🧾 $${r.totalFacturas.toLocaleString('es-CO')}</div>`:''}
+        </div>
+        ${badge(r.estado)}
+      </div>`).join('')+'</div>'}
+  }
+
+  // Activity
+  const af=document.getElementById('act-feed');
+  if(af){
+    if(!hist.length){af.innerHTML='<p style="font-size:12px;color:#94a3b8">Sin actividad</p>'}
+    else{af.innerHTML=hist.slice(0,5).map(r=>`<div class="act-item">
+      <div class="act-dot" style="background:${r.color||'#1e6bf2'}18;color:${r.color||'#1e6bf2'};border-color:${r.color||'#1e6bf2'}33">${(r.iniciales||r.nombre.slice(0,1)).slice(0,1)}</div>
+      <div class="act-ttl">${r.nombre} → ${r.estado}</div>
+      <div class="act-sub">${r.hora||''} · ${(r.departamentos||r.sucursal||'').split(',')[0]}</div>
+      ${r.fotos?`<div style="font-size:10px;color:#16a34a;margin-top:2px">📷 ${r.fotos} foto(s) → SharePoint</div>`:''}
+      ${r.totalFacturas?`<div style="font-size:10px;color:#7c3aed;font-weight:600;margin-top:2px">🧾 $${r.totalFacturas.toLocaleString('es-CO')} facturado</div>`:''}
+    </div>`).join('')}
+  }
+
+  // Tech cards
+  const grid=document.getElementById('tech-cards-grid');
+  if(grid){
+    grid.innerHTML=tecnicos.map(t=>`<div class="tech-card">
+      <div class="tav" style="width:56px;height:56px;font-size:20px;background:${t.color};border:2.5px solid ${t.color}60;margin-bottom:10px">${t.ini}</div>
+      <div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.2">${t.nombre}</div>
+      <div style="font-size:11px;color:#94a3b8;margin:4px 0 8px">${t.depts||'—'}</div>
+      ${badge(t.estado)}
+      <div style="font-size:10px;color:#94a3b8;margin-top:6px">${t.ofic||0} oficinas</div>
+      ${t.ot?`<div style="font-size:10px;color:#1e6bf2;margin-top:2px">${t.ot}</div>`:''}
+      ${t.hora?`<div style="font-size:10px;font-family:monospace;color:#94a3b8;margin-top:2px">${t.hora}</div>`:''}
+      ${t.fotos?`<div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:3px">📷 ${t.fotos} foto(s) → SharePoint</div>`:''}
+      ${t.lat?`<div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px">📍 ${t.lat.toFixed(4)}, ${t.lng.toFixed(4)}</div>`:''}
+      ${t.totalFacturas?`<div style="font-size:10px;color:#7c3aed;font-weight:700;margin-top:3px">🧾 $${t.totalFacturas.toLocaleString('es-CO')} en facturas</div>`:''}
+      ${t.notas?`<div style="font-size:10px;color:#64748b;margin-top:3px;font-style:italic">"${t.notas.slice(0,50)}${t.notas.length>50?'…':''}"</div>`:''}
+    </div>`).join('');
+  }
+
+  // Informes table
+  const iw=document.getElementById('inf-tbl-wrap');
+  if(iw&&reps.length){
+    iw.innerHTML=`<table class="tbl" style="font-size:11px"><thead><tr>
+        <th>Técnico</th><th>Dpto.</th><th>OT</th><th>Estado</th>
+        <th>GPS</th><th>Fotos SP</th><th>Facturas</th><th>Notas</th><th>Hora</th>
+      </tr></thead>
+      <tbody>${reps.map(r=>`<tr>
+        <td style="font-weight:600">${r.nombre}</td>
+        <td style="color:#64748b">${(r.departamentos||r.sucursal||'—').split(',')[0]}</td>
+        <td style="font-family:monospace;font-size:10px">${r.ot||'—'}</td>
+        <td>${badge(r.estado)}</td>
+        <td style="font-family:monospace;font-size:10px;color:#94a3b8">${r.lat?r.lat.toFixed(3)+','+r.lng.toFixed(3):'—'}</td>
+        <td>${r.fotos?`<span style="color:#16a34a;font-weight:600">📷 ${r.fotos}</span>`:'—'}</td>
+        <td style="color:#7c3aed;font-weight:600">${r.totalFacturas?'$'+r.totalFacturas.toLocaleString('es-CO'):'—'}</td>
+        <td style="color:#64748b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.notas||'—'}</td>
+        <td style="font-family:monospace;font-size:10px;color:#94a3b8">${r.hora||'—'}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+
+  // Foto count
+  const totalFotos=reps.reduce((s,r)=>s+(r.fotos||0),0);
+  const fc=document.getElementById('foto-cnt');
+  if(fc)fc.textContent=totalFotos+' archivos';
+
+  // Facturas desde técnicos (sumadas en tiempo real)
+  const facTecTotal=reps.reduce((s,r)=>s+(r.totalFacturas||0),0);
+  const facTecCount=reps.filter(r=>r.totalFacturas>0).length;
+  if(facTecCount>0){
+    // Merge facturas de campo al módulo de facturación
+    const stored=getFacturas();
+    const ids=new Set(stored.map(f=>f.num));
+    reps.forEach(r=>{
+      if(r.facturas&&r.facturas.length){
+        r.facturas.forEach(f=>{
+          if(!ids.has(f.num)){
+            stored.push({...f,tecnico:r.nombre,estado:'Pendiente'});
+            ids.add(f.num);
+          }
+        });
+      }
+    });
+    saveFacturas(stored);
+  }
+
+  // KPI facturas en dashboard
+  const kfv=document.getElementById('fk-total');
+  const kfc=document.getElementById('fk-count');
+  if(kfv||kfc)renderFacturas();
+
+  // Timestamp
+  const lu=document.getElementById('last-upd');
+  if(lu){const n=new Date();lu.textContent='Actualizado '+n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}
+}
+
+// ========== ORGANIGRAMA ==========
+function renderOrg(){
+  const DEPTO_TABLE=[
+    {dpto:'Cesar',          tec:'Eduardo Velaides',  ofic:6,  color:'#0e7490',ini:'EV'},
+    {dpto:'Atlántico',      tec:'Eduardo Velaides',  ofic:12, color:'#0e7490',ini:'EV'},
+    {dpto:'Magdalena',      tec:'Juan Santamaria',   ofic:4,  color:'#0891b2',ini:'JS'},
+    {dpto:'Guajira',        tec:'Juan Santamaria',   ofic:2,  color:'#0891b2',ini:'JS'},
+    {dpto:'Bolívar',        tec:'Gustavo Zapata',    ofic:6,  color:'#7c3aed',ini:'GZ'},
+    {dpto:'Córdoba',        tec:'Gustavo Zapata',    ofic:4,  color:'#7c3aed',ini:'GZ'},
+    {dpto:'Sucre',          tec:'Gustavo Zapata',    ofic:5,  color:'#7c3aed',ini:'GZ'},
+    {dpto:'Santander',      tec:'Jaime Quintanilla', ofic:6,  color:'#b45309',ini:'JQ'},
+    {dpto:'Boyacá',         tec:'Omar Rojas',        ofic:4,  color:'#16a34a',ini:'OR'},
+    {dpto:'Casanare',       tec:'Omar Rojas',        ofic:3,  color:'#16a34a',ini:'OR'},
+    {dpto:'Meta',           tec:'Omar Rojas',        ofic:9,  color:'#16a34a',ini:'OR'},
+    {dpto:'Cundinamarca',   tec:'Diego Rozo',        ofic:28, color:'#1e6bf2',ini:'DR'},
+    {dpto:'Quindío',        tec:'Cesar Florez',      ofic:5,  color:'#9333ea',ini:'CF'},
+    {dpto:'Risaralda',      tec:'Cesar Florez',      ofic:5,  color:'#9333ea',ini:'CF'},
+    {dpto:'Caldas',         tec:'Cesar Florez',      ofic:3,  color:'#9333ea',ini:'CF'},
+    {dpto:'Tolima',         tec:'Fredy Guzman',      ofic:11, color:'#15803d',ini:'FG'},
+    {dpto:'Meta (Tolima)',  tec:'Fredy Guzman',      ofic:9,  color:'#15803d',ini:'FG'},
+    {dpto:'Cauca',          tec:'Jairo Ruales',      ofic:17, color:'#d97706',ini:'JR'},
+    {dpto:'Valle Del Cauca',tec:'Jairo Ruales',      ofic:20, color:'#d97706',ini:'JR'},
+    {dpto:'Nariño',         tec:'Luis Bernal',       ofic:21, color:'#dc2626',ini:'LB'},
+    {dpto:'Putumayo',       tec:'Maury Peñaranda',   ofic:6,  color:'#0284c7',ini:'MP'},
+    {dpto:'Huila',          tec:'Maury Peñaranda',   ofic:11, color:'#0284c7',ini:'MP'},
+    {dpto:'Caquetá',        tec:'Maury Peñaranda',   ofic:1,  color:'#0284c7',ini:'MP'},
+  ];
+  const totalOfic=DEPTO_TABLE.reduce((s,d)=>s+d.ofic,0);
+
+  const ORG_TECNICOS=[
+    {ini:'EV',nombre:'Eduardo Velaides',   rol:'Técnico Dto. Cesar, Atlántico',              color:'#0e7490',ofic:18},
+    {ini:'GZ',nombre:'Gustavo Zapata',     rol:'Técnico Dto. Bolívar, Córdoba y Sucre',       color:'#7c3aed',ofic:15},
+    {ini:'JQ',nombre:'Jaime Quintanilla',  rol:'Técnico Dto. Santander',                      color:'#b45309',ofic:6},
+    {ini:'OR',nombre:'Omar Rojas',         rol:'Técnico Dto. Boyacá y Casanare',              color:'#16a34a',ofic:16},
+    {ini:'JR',nombre:'Jairo Ruales',       rol:'Técnico Dto. Cauca y Valle del Cauca',        color:'#d97706',ofic:37},
+    {ini:'LB',nombre:'Luis Bernal',        rol:'Técnico Dto. Nariño',                         color:'#dc2626',ofic:21},
+    {ini:'MP',nombre:'Maury Peñaranda',    rol:'Técnico Dto. Putumayo, Huila y Caquetá',      color:'#0284c7',ofic:18},
+    {ini:'FG',nombre:'Fredy Guzman',       rol:'Técnico Dto. Tolima y Meta',                  color:'#15803d',ofic:20},
+    {ini:'DR',nombre:'Diego Rozo',         rol:'Técnico Dto. Cundinamarca',                   color:'#1e6bf2',ofic:28},
+    {ini:'CF',nombre:'Cesar Florez',       rol:'Técnico Dto. Quindío, Risaralda y Caldas',    color:'#9333ea',ofic:13},
+    {ini:'JS',nombre:'Juan Santamaria',    rol:'Técnico Dto. Magdalena y Guajira',            color:'#0891b2',ofic:6},
+  ];
+
+  document.getElementById('org-content').innerHTML=`
+  <!-- STATS -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+    <div style="text-align:center;padding:20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px">
+      <div style="font-size:40px;font-weight:900;color:#1e6bf2;line-height:1">11</div>
+      <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px">Líderes regionales</div>
+      <div style="font-size:11px;color:#64748b">Certificados CONTE</div>
+    </div>
+    <div style="text-align:center;padding:20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px">
+      <div style="font-size:40px;font-weight:900;color:#1e6bf2;line-height:1">22</div>
+      <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px">Departamentos</div>
+      <div style="font-size:11px;color:#64748b">Cobertura nacional</div>
+    </div>
+    <div style="text-align:center;padding:20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px">
+      <div style="font-size:40px;font-weight:900;color:#1e6bf2;line-height:1">189</div>
+      <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px">Oficinas</div>
+      <div style="font-size:11px;color:#64748b">Total contrato</div>
+    </div>
+  </div>
+
+  <!-- JERARQUÍA NIVEL 1: Gerente General -->
+  <div style="display:flex;justify-content:center;margin-bottom:16px">
+    <div style="background:#1e293b;border-radius:14px;padding:14px 24px;display:flex;align-items:center;gap:12px;min-width:320px">
+      <div class="tav" style="width:42px;height:42px;font-size:15px;background:#475569;flex-shrink:0">RM</div>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:#fff">Ramiro Merchán Patarroyo</div>
+        <div style="font-size:11px;color:#94a3b8;font-weight:600">Gerente General</div>
+        <div style="font-size:10px;color:#64748b">ramiro.merchan@iseguras.com.co</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONECTOR -->
+  <div style="display:flex;justify-content:center;margin-bottom:0">
+    <div style="width:2px;height:20px;background:#e2e8f0"></div>
+  </div>
+
+  <!-- NIVEL 2: 3 coordinadores -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:4px;position:relative">
+    <!-- Línea horizontal conectora -->
+    <div style="position:absolute;top:0;left:16%;right:16%;height:2px;background:#e2e8f0"></div>
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div style="width:2px;height:20px;background:#e2e8f0"></div>
+      <div style="background:#eff6ff;border:2px solid #1e6bf2;border-radius:12px;padding:12px 14px;width:100%">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="tav" style="width:36px;height:36px;font-size:13px;background:#1e6bf2;flex-shrink:0">WH</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#0f172a">William Higuera García</div>
+            <div style="font-size:10px;color:#1e6bf2;font-weight:600">Coordinador del proyecto</div>
+            <div style="font-size:10px;color:#94a3b8">ingenieria@iseguras.com.co</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div style="width:2px;height:20px;background:#e2e8f0"></div>
+      <div style="background:#eff6ff;border:2px solid #0891b2;border-radius:12px;padding:12px 14px;width:100%">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="tav" style="width:36px;height:36px;font-size:13px;background:#0891b2;flex-shrink:0">AV</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#0f172a">Abel Vargas Alfonso</div>
+            <div style="font-size:10px;color:#0891b2;font-weight:600">Coordinador SGSST · MA</div>
+            <div style="font-size:10px;color:#94a3b8">seguridad.laboral@iseguras.com.co</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div style="width:2px;height:20px;background:#e2e8f0"></div>
+      <div style="background:#f5f3ff;border:2px solid #7c3aed;border-radius:12px;padding:12px 14px;width:100%">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="tav" style="width:36px;height:36px;font-size:13px;background:#7c3aed;flex-shrink:0">CN</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#0f172a">Carolina Nieto Garzón</div>
+            <div style="font-size:10px;color:#7c3aed;font-weight:600">Jefe administrativa y financiera</div>
+            <div style="font-size:10px;color:#94a3b8">carolina.nieto@iseguras.com.co</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sub-nivel: Bibiana -->
+      <div style="width:2px;height:16px;background:#e2e8f0;margin-top:0"></div>
+      <div style="background:#faf5ff;border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 12px;width:100%">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="tav" style="width:30px;height:30px;font-size:11px;background:#a78bfa;flex-shrink:0">BG</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#0f172a">Bibiana Garzón Martínez</div>
+            <div style="font-size:10px;color:#7c3aed">Auxiliar adm. y financiero</div>
+            <div style="font-size:10px;color:#94a3b8">administrativo@iseguras.com.co</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NIVEL 3: 11 técnicos -->
+  <div style="width:2px;height:20px;background:#e2e8f0;margin:0 0 0 0"></div>
+  <div style="margin-top:4px;margin-bottom:24px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:12px;padding-left:2px">Técnicos líderes regionales · Certificados CONTE</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${ORG_TECNICOS.map(t=>`
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:12px;display:flex;align-items:start;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:box-shadow .2s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,.05)'">
+        <div class="tav" style="width:36px;height:36px;font-size:13px;background:${t.color};border:2px solid ${t.color}50;flex-shrink:0">${t.ini}</div>
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:700;color:#0f172a">${t.nombre}</div>
+          <div style="font-size:10px;color:#64748b;margin:2px 0;line-height:1.4">${t.rol}</div>
+          <div style="font-size:10px;font-weight:700;color:${t.color}">${t.ofic} oficinas</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- TABLA DEPARTAMENTOS / TÉCNICO / OFICINAS -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)">
+    <div style="padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:700;color:#0f172a">Distribución por departamento · Ruta Preventiva</div>
+      <div style="font-size:12px;color:#94a3b8">Total: <strong style="color:#1e6bf2">${totalOfic} oficinas</strong></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#f8fafc">
+            <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #f1f5f9">Departamento</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #f1f5f9">Técnico responsable</th>
+            <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #f1f5f9">N° Oficinas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DEPTO_TABLE.map((d,i)=>`
+          <tr style="border-bottom:1px solid #f8fafc;${i%2===0?'background:#fff':'background:#fafbfc'}">
+            <td style="padding:9px 16px;font-weight:600;color:#374151">${d.dpto}</td>
+            <td style="padding:9px 16px">
+              <div style="display:flex;align-items:center;gap:7px">
+                <div style="width:22px;height:22px;border-radius:50%;background:${d.color};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0">${d.ini}</div>
+                <span style="color:#374151">${d.tec}</span>
+              </div>
+            </td>
+            <td style="padding:9px 16px;text-align:center">
+              <span style="font-weight:700;color:${d.color};background:${d.color}12;border:1px solid ${d.color}30;border-radius:20px;padding:2px 10px">${d.ofic}</span>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#f8fafc;border-top:2px solid #e2e8f0">
+            <td colspan="2" style="padding:10px 16px;font-weight:700;color:#374151">Total oficinas</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:900;color:#1e6bf2;font-size:15px">${totalOfic}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- TABLA RUTA CORRECTIVA -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-top:18px">
+    <div style="padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#fffbeb">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#0f172a">Ruta Correctiva · Mantenimiento Correctivo</div>
+        <div style="font-size:11px;color:#b45309;margin-top:2px">Correctivos bajo supervisión de Abel Vargas Alfonso · SGSST</div>
+      </div>
+      <span style="background:#fef3c7;border:1px solid #fde68a;color:#b45309;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">22 depts.</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#fffbeb">
+            <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#b45309;border-bottom:1px solid #fde68a">Departamento</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#b45309;border-bottom:1px solid #fde68a">Técnico correctivo</th>
+            <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#b45309;border-bottom:1px solid #fde68a">Cobertura</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${[
+            {dpto:'Atlántico',         tec:'Diego Rozo',        apoyo:'Abel Vargas', color:'#1e6bf2',ini:'DR',cob:'Preventivo + Correctivo'},
+            {dpto:'Bolívar',           tec:'Gustavo Zapata',    apoyo:'Abel Vargas', color:'#7c3aed',ini:'GZ',cob:'Preventivo + Correctivo'},
+            {dpto:'Boyacá',            tec:'Omar Rojas',        apoyo:'Abel Vargas', color:'#16a34a',ini:'OR',cob:'Preventivo + Correctivo'},
+            {dpto:'Caldas',            tec:'Cesar Florez',      apoyo:'Abel Vargas', color:'#9333ea',ini:'CF',cob:'Preventivo + Correctivo'},
+            {dpto:'Caquetá',           tec:'Maury Peñaranda',   apoyo:'Abel Vargas', color:'#0284c7',ini:'MP',cob:'Preventivo + Correctivo'},
+            {dpto:'Casanare',          tec:'Omar Rojas',        apoyo:'Abel Vargas', color:'#16a34a',ini:'OR',cob:'Preventivo + Correctivo'},
+            {dpto:'Cauca',             tec:'Jairo Ruales',      apoyo:'Abel Vargas', color:'#d97706',ini:'JR',cob:'Preventivo + Correctivo'},
+            {dpto:'Cesar',             tec:'Eduardo Velaides',  apoyo:'Abel Vargas', color:'#0e7490',ini:'EV',cob:'Preventivo + Correctivo'},
+            {dpto:'Córdoba',           tec:'Gustavo Zapata',    apoyo:'Abel Vargas', color:'#7c3aed',ini:'GZ',cob:'Preventivo + Correctivo'},
+            {dpto:'Cundinamarca',      tec:'Diego Rozo',        apoyo:'Abel Vargas', color:'#1e6bf2',ini:'DR',cob:'Preventivo + Correctivo'},
+            {dpto:'Guajira',           tec:'Juan Santamaria',   apoyo:'Abel Vargas', color:'#0891b2',ini:'JS',cob:'Preventivo + Correctivo'},
+            {dpto:'Huila',             tec:'Maury Peñaranda',   apoyo:'Abel Vargas', color:'#0284c7',ini:'MP',cob:'Preventivo + Correctivo'},
+            {dpto:'Magdalena',         tec:'Juan Santamaria',   apoyo:'Abel Vargas', color:'#0891b2',ini:'JS',cob:'Preventivo + Correctivo'},
+            {dpto:'Meta',              tec:'Omar Rojas',        apoyo:'Abel Vargas', color:'#16a34a',ini:'OR',cob:'Preventivo + Correctivo'},
+            {dpto:'Nariño',            tec:'Luis Bernal',       apoyo:'Abel Vargas', color:'#dc2626',ini:'LB',cob:'Preventivo + Correctivo'},
+            {dpto:'Putumayo',          tec:'Maury Peñaranda',   apoyo:'Abel Vargas', color:'#0284c7',ini:'MP',cob:'Preventivo + Correctivo'},
+            {dpto:'Quindío',           tec:'Cesar Florez',      apoyo:'Abel Vargas', color:'#9333ea',ini:'CF',cob:'Preventivo + Correctivo'},
+            {dpto:'Risaralda',         tec:'Cesar Florez',      apoyo:'Abel Vargas', color:'#9333ea',ini:'CF',cob:'Preventivo + Correctivo'},
+            {dpto:'Santander',         tec:'Jaime Quintanilla', apoyo:'Abel Vargas', color:'#b45309',ini:'JQ',cob:'Preventivo + Correctivo'},
+            {dpto:'Sucre',             tec:'Gustavo Zapata',    apoyo:'Abel Vargas', color:'#7c3aed',ini:'GZ',cob:'Preventivo + Correctivo'},
+            {dpto:'Tolima',            tec:'Fredy Guzman',      apoyo:'Abel Vargas', color:'#15803d',ini:'FG',cob:'Preventivo + Correctivo'},
+            {dpto:'Valle Del Cauca',   tec:'Jairo Ruales',      apoyo:'Abel Vargas', color:'#d97706',ini:'JR',cob:'Preventivo + Correctivo'},
+          ].map((d,i)=>`
+          <tr style="border-bottom:1px solid #f8fafc;${i%2===0?'background:#fff':'background:#fffdf5'}">
+            <td style="padding:9px 16px;font-weight:600;color:#374151">${d.dpto}</td>
+            <td style="padding:9px 16px">
+              <div style="display:flex;align-items:center;gap:7px">
+                <div style="width:22px;height:22px;border-radius:50%;background:${d.color};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0">${d.ini}</div>
+                <div>
+                  <span style="color:#374151;font-weight:600">${d.tec}</span>
+                  <div style="font-size:10px;color:#94a3b8">Supervisión: ${d.apoyo}</div>
+                </div>
+              </div>
+            </td>
+            <td style="padding:9px 16px;text-align:center">
+              <span style="font-size:10px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:20px;padding:2px 8px">${d.cob}</span>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ========== USERS LIST (config) ==========
+function renderUsersList(){
+  const users=getUsers();
+  const el=document.getElementById('users-list');
+  if(!el)return;
+  el.innerHTML=users.length===0
+    ? '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">No hay usuarios registrados. Registra el primero arriba.</p>'
+    : users.map((u,i)=>{
+        const ini=(u.nombre||u.user).split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:10px 14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="tav" style="width:30px;height:30px;font-size:11px;background:${u.color||'#1e6bf2'}">${ini}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#0f172a">${u.nombre||u.user}</div>
+              <div style="font-size:10px;color:#94a3b8">${u.rol} · @${u.user}</div>
+            </div>
+          </div>
+          <button onclick="deleteUser(${i})" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer">✕ Borrar</button>
+        </div>`;
+      }).join('');
+  renderConfigFacturas();
+}
+
+function deleteUser(idx){
+  const users=getUsers();
+  if(!confirm('¿Eliminar usuario "'+users[idx].user+'"?\nSi eliminas todos los usuarios, deberás registrar uno nuevo para entrar.'))return;
+  users.splice(idx,1);
+  saveUsers(users);
+  renderUsersList();renderPills();
+  toast('🗑 Usuario eliminado');
+}
+
+function borrarTodosUsuarios(){
+  if(!confirm('⚠️ ¿Borrar TODOS los usuarios?\nDeberás registrar uno nuevo para poder iniciar sesión.'))return;
+  saveUsers([]);
+  renderUsersList();renderPills();
+  toast('🗑 Todos los usuarios eliminados');
+}
+
+function borrarReportes(){
+  if(!confirm('¿Limpiar todos los reportes de técnicos?'))return;
+  localStorage.removeItem('banco_tecnicos');
+  localStorage.removeItem('banco_reportes');
+  lastHash='';renderAll();
+  toast('🗑 Reportes limpiados');
+}
+
+// ========== FACTURAS CONFIG ==========
+function renderConfigFacturas(){
+  const facturas=getFacturas();
+  const el=document.getElementById('cfg-facturas-list');
+  const empty=document.getElementById('cfg-facturas-empty');
+  if(!el)return;
+  if(!facturas.length){
+    el.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  const facBadge={Pagada:'b-green',Pendiente:'b-amber',Vencida:'b-red'};
+  el.innerHTML=facturas.map((f,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:9px">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:700;color:#1e6bf2">${f.num}</span>
+          <span class="badge ${facBadge[f.estado]||'b-gray'}" style="font-size:9px">${f.estado}</span>
+        </div>
+        <div style="font-size:12px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">${f.concepto}</div>
+        <div style="font-size:10px;color:#94a3b8">${f.tecnico||'—'} · ${f.fecha||'—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px">
+        <span style="font-size:13px;font-weight:800;color:#0f172a">$${(f.valor||0).toLocaleString('es-CO')}</span>
+        <button onclick="borrarFactura(${i})" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function borrarFactura(idx){
+  const facturas=getFacturas();
+  const f=facturas[idx];
+  if(!confirm('¿Eliminar factura '+f.num+' · $'+(f.valor||0).toLocaleString('es-CO')+'?'))return;
+  facturas.splice(idx,1);
+  saveFacturas(facturas);
+  renderConfigFacturas();
+  renderFacturas();
+  toast('🗑 Factura '+f.num+' eliminada');
+}
+
+function borrarTodasFacturas(){
+  const facturas=getFacturas();
+  if(!facturas.length){toast('No hay facturas para borrar');return;}
+  if(!confirm('¿Borrar TODAS las facturas ('+facturas.length+')? Esta acción no se puede deshacer.'))return;
+  saveFacturas([]);
+  renderConfigFacturas();
+  renderFacturas();
+  toast('🗑 Todas las facturas eliminadas');
+}
+
+// ========== POLLING — cada 3s detecta cambios en localStorage ==========
+function poll(){
+  const reps=getReportes();
+  const h=reps.map(t=>t.id+(t.hora||'')+(t.estado||'')+t.lat+t.lng).join('|');
+  const fh=getFacturas().map(f=>f.num+f.valor).join('|');
+  const combined=h+'__'+fh;
+  if(combined!==lastHash){
+    const isEmpty=lastHash==='';
+    lastHash=combined;
+    // Re-render todo
+    renderAll();
+    renderFacturas();
+    // Actualizar mapa con nuevas coords
+    if(mapInst){
+      mapInst.invalidateSize();
+      renderMarkers(getMerged());
+    }
+    const sp=document.getElementById('sync-pill');
+    const st=document.getElementById('sync-txt');
+    if(!isEmpty){
+      sp.className='sync-pill sync-new';
+      st.textContent='Actualizado ✓';
+      toast('📡 Nuevo reporte · mapa actualizado');
+      setTimeout(()=>{sp.className='sync-pill sync-ok';st.textContent='Sincronizado'},3000);
+    }
+  }
+}
+
+// ========== LINK MODAL ==========
+const PRODUCCION_URL_KEY = 'banco_produccion_url';
+
+function getTecnicoLink(){
+  const saved = localStorage.getItem(PRODUCCION_URL_KEY);
+  if(saved) return saved.replace(/\/$/, '') + '/tecnico.html';
+  if(window.location.protocol !== 'file:'){
+    return window.location.href.replace(/[^/]*$/, '') + 'tecnico.html';
+  }
+  return null;
+}
+
+function guardarURLProd(){
+  const inp = document.getElementById('inp-url-prod');
+  const err = document.getElementById('url-err');
+  let url = (inp.value||'').trim().replace(/\/$/, '');
+  if(!url){err.textContent='Pega una URL válida';err.style.display='block';return;}
+  if(!url.startsWith('http')){url='https://'+url;}
+  localStorage.setItem(PRODUCCION_URL_KEY, url);
+  err.style.display='none';
+  toast('✅ URL guardada');
+  // Refresh modal
+  openLinkModal();
+}
+
+function openLinkModal(){
+  const link = getTecnicoLink();
+  const configured = document.getElementById('link-configured');
+  const setup      = document.getElementById('link-setup');
+  const reps = getReportes();
+  const rl   = document.getElementById('reported-list');
+
+  if(link){
+    // Mostrar link
+    configured.style.display = 'block';
+    setup.style.display      = 'none';
+    document.getElementById('link-url').textContent = link;
+    const msg = '¡Hola! 👋 Entra a este link desde tu celular para enviar tu reporte de campo: ' + link;
+    const waBtn = document.getElementById('wa-link');
+    waBtn.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(msg);
+    // Pre-fill input with saved URL
+    const saved = localStorage.getItem(PRODUCCION_URL_KEY);
+    if(saved) document.getElementById('inp-url-prod').value = saved;
+  } else {
+    configured.style.display = 'none';
+    setup.style.display      = 'block';
+  }
+
+  rl.innerHTML = reps.length
+    ? reps.map(r=>`<div class="rep-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="tav" style="width:22px;height:22px;font-size:9px;background:${r.color||'#1e6bf2'}">${r.iniciales||r.nombre.slice(0,2).toUpperCase()}</div>
+          <span style="font-size:12px;font-weight:600">${r.nombre}</span>
+        </div>
+        ${badge(r.estado)}
+        <span style="font-size:10px;font-family:monospace;color:#94a3b8">${r.hora||''}</span>
+      </div>`).join('')
+    : '<p style="font-size:12px;color:#94a3b8;text-align:center">Sin reportes aún.</p>';
+
+  document.getElementById('modal-link').classList.add('open');
+}
+
+function copyLink(){
+  const link = getTecnicoLink();
+  if(!link){toast('⚠️ Configura la URL primero');return;}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(()=>toast('✅ Link copiado')).catch(()=>copyFallback(link));
+  }else{copyFallback(link)}
+}
+function copyFallback(txt){
+  const ta=document.createElement('textarea');
+  ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast('✅ Link copiado')}catch(e){toast('Copia: '+txt)}
+  document.body.removeChild(ta);
+}
+
+// ========== SP UPLOAD ==========
+function openSP(){window.open(SP_URL,'_blank');toast('☁️ Abriendo SharePoint')}
+function spUpload(input){
+  const files=Array.from(input.files||input||[]);if(!files.length)return;
+  const prog=document.getElementById('sp-prog');
+  const bar=document.getElementById('sp-prog-bar');
+  const lbl=document.getElementById('sp-prog-lbl');
+  prog.classList.add('show');let pct=0;
+  const iv=setInterval(()=>{pct+=Math.random()*15;if(pct>=100){pct=100;clearInterval(iv);
+    bar.style.width='100%';lbl.textContent='✅ '+files.length+' archivo(s) subido(s) a SharePoint';
+    addSpFiles(files);setTimeout(()=>{prog.classList.remove('show');bar.style.width='0%'},2500);
+    toast('☁️ '+files.length+' archivo(s) → SharePoint');
+  }else{bar.style.width=pct+'%';lbl.textContent='Subiendo… '+Math.round(pct)+'%'}},180);
+  input.value='';
+}
+function addSpFiles(files){
+  const icons={jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊'};
+  const list=document.getElementById('sp-files');const now=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  files.forEach(f=>{const ext=(f.name.split('.').pop()||'').toLowerCase();
+    list.insertAdjacentHTML('afterbegin',`<div class="sp-file-item"><span class="sp-file-ico">${icons[ext]||'📎'}</span><div><div class="sp-file-nm">${f.name}</div><div class="sp-file-meta">${(f.size/1024).toFixed(0)} KB · Hoy ${now}</div></div><span class="sp-file-link" onclick="openSP()">Ver</span></div>`);
+  });
+}
+function initDrop(){
+  const z=document.getElementById('drop-zone');if(!z||z._d)return;z._d=1;
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag-over')});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over');const files=Array.from(e.dataTransfer.files);if(files.length)spUpload({files,value:''})});
+}
+
+// ========== MISC ==========
+function clearReports(){if(!confirm('¿Limpiar todos los reportes de técnicos?'))return;localStorage.removeItem('banco_tecnicos');localStorage.removeItem('banco_reportes');lastHash='';renderAll();toast('🗑 Reportes limpiados')}
+function toggleStorage(){const el=document.getElementById('storage-pre');el.style.display=el.style.display==='block'?'none':'block';if(el.style.display==='block')el.textContent=JSON.stringify({banco_tecnicos:getReportes(),banco_reportes:getHistorial()},null,2)}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500)}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded',()=>{
+  renderPills();
+  // Check existing session
+  const sess=sessionStorage.getItem('banco_sess');
+  if(sess)goToDashboard();
+  // Enter key on login
+  document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+});
+</script>
+</body>
+</html>
