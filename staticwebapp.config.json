@@ -1,0 +1,23 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/tecnico.html", "/*.{css,scss,js,png,gif,ico,jpg,svg}"]
+  },
+  "routes": [
+    {
+      "route": "/tecnico.html",
+      "serve": "/tecnico.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/index.html",
+      "serve": "/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ]
+}
